@@ -4,6 +4,8 @@ import { logout } from "../apis/authApi"
 import { useAuth } from "../contexts/AuthContext"
 import AuthModal from "./AuthModal"
 
+import logo from "../assets/logo.png"
+
 const navItems = [
   { label: "Trang chủ", to: "/" },
   { label: "Thư viện phim", to: "/movies" },
@@ -87,10 +89,13 @@ function Header() {
               {isMobileMenuOpen ? "close" : "menu"}
             </button>
             <div
-              className="cursor-pointer font-headline text-xl font-black tracking-tighter text-[#61b4fe] transition-transform active:scale-95 sm:text-2xl"
+              className="flex cursor-pointer items-center gap-2 transition-transform active:scale-95"
               onClick={() => navigate("/")}
             >
-              ABSOLUTE CINEMA
+              <img src={logo} alt="Vicienema" className="h-8 w-auto sm:h-10" />
+              <span className="font-headline text-xl font-black tracking-tighter text-[#61b4fe] sm:text-2xl">
+                VICINEMA
+              </span>
             </div>
           </div>
 
@@ -180,9 +185,8 @@ function Header() {
         {/* Mobile Navigation Panel */}
         <div
           ref={mobileMenuRef}
-          className={`absolute left-0 top-[calc(100%-1px)] w-full border-b border-outline-variant/20 bg-background/95 shadow-xl backdrop-blur-md transition-all duration-300 md:hidden ${
-            isMobileMenuOpen ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0 pointer-events-none"
-          }`}
+          className={`absolute left-0 top-[calc(100%-1px)] w-full border-b border-outline-variant/20 bg-background/95 shadow-xl backdrop-blur-md transition-all duration-300 md:hidden ${isMobileMenuOpen ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0 pointer-events-none"
+            }`}
         >
           <nav className="flex flex-col p-4">
             {navItems.map((item) => (
@@ -191,8 +195,7 @@ function Header() {
                 to={item.to}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-xl px-4 py-3 font-headline font-bold transition-all active:scale-[0.98] ${
-                    isActive ? "bg-primary/10 text-[#00f4fe]" : "text-slate-400 hover:bg-white/5"
+                  `flex items-center gap-3 rounded-xl px-4 py-3 font-headline font-bold transition-all active:scale-[0.98] ${isActive ? "bg-primary/10 text-[#00f4fe]" : "text-slate-400 hover:bg-white/5"
                   }`
                 }
               >
