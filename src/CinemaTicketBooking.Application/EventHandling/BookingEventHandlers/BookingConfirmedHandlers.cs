@@ -91,7 +91,7 @@ public class SendEmailBookingConfirmedHandler(
         try
         {
             var htmlBody = BookingConfirmationTemplate.Render(model);
-            var subject = $"[Cinema] Xác nhận đặt vé – {movieName} – #{bookingCode}";
+            var subject = $"[Vicinema] Xác nhận đặt vé – {movieName} – #{bookingCode}";
             await emailSender.SendEmailAsync(@event.Email, subject, htmlBody, @event.CustomerName, cancellationToken);
         }
         catch (Exception ex)

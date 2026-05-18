@@ -33,6 +33,7 @@ builder.Services.AddAuthInfrastructure(builder.Configuration);
 builder.Services.AddSingleton<ITicketRealtimePublisher, SignalRTicketRealtimePublisher>();
 builder.Services.AddSingleton<IPaymentRealtimePublisher, SignalRPaymentRealtimePublisher>();
 builder.Services.AddHostedService<TicketLockRecoveryHostedService>();
+builder.Services.AddHostedService<AutoSheduleShowtimesDailyService>();
 
 
 // =======================================================

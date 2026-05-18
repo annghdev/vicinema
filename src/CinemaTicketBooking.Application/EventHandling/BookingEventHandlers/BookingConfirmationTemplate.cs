@@ -149,7 +149,7 @@ public static class BookingConfirmationTemplate
 
     private static string HeroSection(string movieName) => $"""
         <div class="hero">
-          <div class="hero-logo">CINEMA TICKET</div>
+          <div class="hero-logo">VICINEMA TICKET</div>
           <div class="hero-tagline">thanh toán thành công</div>
           <div class="hero-movie">{HtmlEncode(movieName)}</div>
         </div>
@@ -282,8 +282,8 @@ public static class BookingConfirmationTemplate
     private static string Footer() => $"""
         <div class="footer">
           <p>Email này được gửi tự động từ hệ thống đặt vé. Vui lòng không trả lời.</p>
-          <p>Hỗ trợ: <a href="mailto:support@cinema.vn">support@cinema.vn</a> | Hotline: 1900 xxxx</p>
-          <p style="margin-top:16px; opacity:0.6;">© {DateTimeOffset.UtcNow.Year} Cinema Ticket Booking. All rights reserved.</p>
+          <p>Hỗ trợ: <a href="mailto:support@vicinema.vn">support@cinema.vn</a> | Hotline: 1900 xxxx</p>
+          <p style="margin-top:16px; opacity:0.6;">© {DateTimeOffset.UtcNow.Year} Vicinema. All rights reserved.</p>
         </div>
         """;
 

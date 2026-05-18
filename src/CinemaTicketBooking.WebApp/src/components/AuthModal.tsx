@@ -211,7 +211,7 @@ function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
               <div className="relative z-20">
                 <h1 className="mb-2 font-headline text-4xl font-black uppercase tracking-widest text-primary drop-shadow-[0_0_8px_rgba(0,244,254,0.5)]">
-                  ABSOLUTE CINEMA
+                  VCINEMA
                 </h1>
                 <p className="font-label text-sm uppercase tracking-[0.2em] text-on-surface-variant">Trải nghiệm điện ảnh số</p>
               </div>
@@ -228,7 +228,7 @@ function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
               <div className="relative z-20 mt-auto">
                 <p className="mb-4 text-sm text-on-surface-variant/80">
-                  {isSignup ? "Bạn đã là thành viên của Absolute Cinema?" : "Bạn chưa có tài khoản Absolute Cinema?"}
+                  {isSignup ? "Bạn đã là thành viên của Vicinema?" : "Bạn chưa có tài khoản Vicinema?"}
                 </p>
                 <button
                   type="button"
