@@ -51,11 +51,10 @@ function Home() {
           (slides || []).map((slide, index) => (
             <div
               key={slide.id}
-              className={`absolute inset-0 z-0 transition-all duration-1000 cubic-bezier(0.4, 0, 0.2, 1) ${
-                index === currentSlideIndex 
-                  ? "translate-x-0 opacity-100 z-10" 
-                  : "translate-x-full opacity-0 z-0"
-              }`}
+              className={`absolute inset-0 z-0 transition-all duration-1000 cubic-bezier(0.4, 0, 0.2, 1) ${index === currentSlideIndex
+                ? "translate-y-0 opacity-100 z-10"
+                : "translate-y-full opacity-0 z-0"
+                }`}
             >
               <img
                 className="h-full w-full object-cover brightness-[0.35] grayscale-[5%]"
@@ -72,14 +71,13 @@ function Home() {
           <div className="max-w-3xl">
             {currentSlide && (
               <div key={currentSlide.id} className={`transition-all duration-700 ${isLoadingSlides ? "opacity-0" : "opacity-100 translate-y-0"}`}>
-                <div className="flex items-center gap-3 mb-6">
-                  <span className={`px-3 py-1 font-headline text-xs font-bold tracking-widest uppercase backdrop-blur-sm border ${
-                    (currentSlide.type === 'ShowingMovie' || currentSlide.type as unknown as number === 0) ? 'bg-primary/20 border-primary/40 text-primary' :
+                <div className="flex items-center gap-3 mb-6 animate-slide-left">
+                  <span className={`px-3 py-1 font-headline text-xs font-bold tracking-widest uppercase backdrop-blur-sm border ${(currentSlide.type === 'ShowingMovie' || currentSlide.type as unknown as number === 0) ? 'bg-primary/20 border-primary/40 text-primary' :
                     (currentSlide.type === 'UpcomingMovie' || currentSlide.type as unknown as number === 1) ? 'bg-secondary/20 border-secondary/40 text-secondary' :
-                    'bg-amber-500/20 border-amber-500/40 text-amber-500'
-                  }`}>
-                    {(currentSlide.type === 'ShowingMovie' || currentSlide.type as unknown as number === 0) ? 'Đang chiếu' : 
-                     (currentSlide.type === 'UpcomingMovie' || currentSlide.type as unknown as number === 1) ? 'Sắp khởi chiếu' : 'Sự kiện khuyến mãi'}
+                      'bg-amber-500/20 border-amber-500/40 text-amber-500'
+                    }`}>
+                    {(currentSlide.type === 'ShowingMovie' || currentSlide.type as unknown as number === 0) ? 'Đang chiếu' :
+                      (currentSlide.type === 'UpcomingMovie' || currentSlide.type as unknown as number === 1) ? 'Sắp khởi chiếu' : 'Sự kiện khuyến mãi'}
                   </span>
                   {(currentSlide.type === 'ShowingMovie' || currentSlide.type as unknown as number === 0) && (
                     <span className="flex items-center gap-1 text-[10px] font-bold text-white/60 uppercase tracking-tighter">
@@ -88,16 +86,16 @@ function Home() {
                     </span>
                   )}
                 </div>
-                <h1 className="mb-6 font-headline text-5xl font-black leading-[1.1] tracking-tighter text-white sm:text-6xl md:text-8xl">
+                <h1 className="mb-6 font-headline text-5xl font-black leading-[1.1] tracking-tighter text-white sm:text-6xl md:text-8xl animate-slide-left anim-delay-150">
                   {(currentSlide.title || "").split(":")[0]} <br />
                   <span className="text-primary drop-shadow-[0_0_15px_rgba(97,180,254,0.4)]">
                     {(currentSlide.title || "").split(":")[1] || ""}
                   </span>
                 </h1>
-                <p className="mb-10 max-w-2xl text-base font-light leading-relaxed text-slate-400 sm:text-lg md:text-xl">
+                <p className="mb-10 max-w-2xl text-base font-light leading-relaxed text-slate-400 sm:text-lg md:text-xl animate-slide-left anim-delay-300">
                   {currentSlide.description || "Trải nghiệm đỉnh cao của điện ảnh với hệ thống âm thanh vòm thế hệ mới và hình ảnh sắc nét đến từng chi tiết tại hệ thống rạp Absolute Cinema."}
                 </p>
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-4 animate-slide-left anim-delay-450">
                   {(currentSlide.type === 'UpcomingMovie' || currentSlide.type as unknown as number === 1) ? (
                     <button
                       type="button"
@@ -132,19 +130,54 @@ function Home() {
           </div>
         </div>
 
-        {/* Carousel Indicators */}
+        {/* Carousel Image Previews on the Right */}
         {!isLoadingSlides && (slides || []).length > 1 && (
-          <div className="absolute bottom-12 left-1/2 z-20 flex -translate-x-1/2 gap-3">
-            {(slides || []).map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlideIndex(index)}
-                className={`h-1.5 transition-all duration-300 ${
-                  index === currentSlideIndex ? "w-8 bg-primary shadow-[0_0_10px_rgba(0,244,254,0.8)]" : "w-3 bg-white/20 hover:bg-white/40"
-                } rounded-full`}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
+          <div className="absolute right-6 md:right-10 top-[54%] z-20 hidden sm:flex -translate-y-1/2 flex-col items-end gap-3">
+            {/* Up Button */}
+            <button
+              type="button"
+              onClick={() => setCurrentSlideIndex((prev) => (prev - 1 + slides.length) % slides.length)}
+              className="flex h-5 md:h-6 w-24 md:w-32 items-center justify-center rounded-md border border-white/5 bg-black/35 text-white backdrop-blur-sm opacity-35 hover:opacity-100 transition-all hover:bg-black/50 active:scale-[0.98]"
+              aria-label="Previous slide"
+            >
+              <span className="material-symbols-outlined text-[22px] font-black leading-none">expand_less</span>
+            </button>
+
+            {/* Vertically Aligned Previews */}
+            {(slides || []).map((slide, index) => {
+              const isActive = index === currentSlideIndex
+              return (
+                <button
+                  key={slide.id}
+                  onClick={() => setCurrentSlideIndex(index)}
+                  className={`group relative h-14 md:h-18 w-24 md:w-32 rounded-lg overflow-hidden border transition-all duration-500 ease-in-out ${isActive
+                    ? "border-primary shadow-[0_0_15px_rgba(0,244,254,0.4)] opacity-100 scale-[1.04]"
+                    : "border-outline-variant/30 opacity-40 scale-95 hover:opacity-75 hover:scale-98"
+                    }`}
+                  aria-label={`Go to slide ${index + 1}`}
+                >
+                  <img
+                    src={slide.imageUrl}
+                    alt={slide.title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  {!isActive && <div className="absolute inset-0 bg-black/45 transition-opacity group-hover:opacity-20" />}
+                  {isActive && (
+                    <div className="absolute inset-0 border border-primary/30 animate-pulse pointer-events-none" />
+                  )}
+                </button>
+              )
+            })}
+
+            {/* Down Button */}
+            <button
+              type="button"
+              onClick={() => setCurrentSlideIndex((prev) => (prev + 1) % slides.length)}
+              className="flex h-5 md:h-6 w-24 md:w-32 items-center justify-center rounded-md border border-white/5 bg-black/35 text-white backdrop-blur-sm opacity-35 hover:opacity-100 transition-all hover:bg-black/50 active:scale-[0.98]"
+              aria-label="Next slide"
+            >
+              <span className="material-symbols-outlined text-[22px] font-black leading-none">expand_more</span>
+            </button>
           </div>
         )}
       </section>
@@ -414,7 +447,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-screen-2xl px-8 py-24">
+      {/* <section className="mx-auto max-w-screen-2xl px-8 py-24">
         <div className="relative overflow-hidden border border-outline-variant/10 bg-surface-container-high p-12 md:p-24">
           <div className="pointer-events-none absolute right-0 top-0 h-full w-1/2 opacity-30">
             <div className="absolute inset-0 bg-gradient-to-l from-secondary/20 to-transparent" />
@@ -441,9 +474,9 @@ function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
-      <MovieTrailerModal 
+      <MovieTrailerModal
         isOpen={trailerData.isOpen}
         onClose={() => setTrailerData(prev => ({ ...prev, isOpen: false }))}
         movieName={trailerData.name}

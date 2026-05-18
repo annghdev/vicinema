@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { NavLink, useNavigate } from "react-router-dom"
 import { logout } from "../apis/authApi"
 import { useAuth } from "../contexts/AuthContext"
@@ -116,13 +116,13 @@ function Header() {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            <button
+            {/* <button
               type="button"
               aria-label="Tìm kiếm"
               className="material-symbols-outlined text-slate-400 transition-all hover:text-[#00f4fe]"
             >
               search
-            </button>
+            </button> */}
             {authState ? (
               <div className="relative" ref={accountMenuRef}>
                 <button
@@ -173,7 +173,7 @@ function Header() {
               <button
                 type="button"
                 onClick={() => setIsAuthModalOpen(true)}
-                className="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-on-primary shadow-[0_0_15px_rgba(97,180,254,0.3)] transition-all hover:scale-105 hover:shadow-[0_0_20px_rgba(0,244,254,0.5)] active:scale-95 sm:px-6 sm:py-2 sm:text-sm"
+                className="flex items-center gap-2 rounded-sm border border-primary/50 bg-transparent px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary shadow-[0_0_10px_rgba(0,244,254,0.15)] transition-all duration-300 hover:scale-105 hover:border-primary hover:bg-primary/10 hover:shadow-[0_0_20px_rgba(0,244,254,0.4)] active:scale-95 sm:px-6 sm:py-2 sm:text-sm"
               >
                 <span className="material-symbols-outlined text-lg sm:text-xl">account_circle</span>
                 <span>Đăng nhập</span>

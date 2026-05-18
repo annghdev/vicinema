@@ -83,7 +83,18 @@
                             <td class="px-8 py-6 text-sm font-bold text-on-surface">@movie.Duration phút</td>
                             <td class="px-8 py-6 text-sm text-on-surface-variant">@movie.Studio</td>
                             <td class="px-8 py-6">
-                                <span class="px-3 py-1 rounded-full @(movie.Status.ToString() == "NowShowing" ? "bg-secondary/10 text-secondary border-secondary/20" : "bg-primary/10 text-primary border-primary/20") text-[10px] font-bold border uppercase">@movie.Status</span>
+                                @if (movie.Status == MovieStatus.NowShowing)
+                                {
+                                    <span class="px-3 py-1 rounded-full bg-secondary/10 text-secondary border-secondary/20 text-[10px] font-bold border uppercase">Đang chiếu</span>
+                                }
+                                else if (movie.Status == MovieStatus.Upcoming)
+                                {
+                                    <span class="px-3 py-1 rounded-full bg-primary/10 text-primary border-primary/20 text-[10px] font-bold border uppercase">Sắp chiếu</span>
+                                }
+                                else
+                                {
+                                    <span class="px-3 py-1 rounded-full bg-red-500/10 text-red-400 border-red-500/20 text-[10px] font-bold border uppercase">Ngừng chiếu</span>
+                                }
                             </td>
                             <td class="px-8 py-6 text-right">
                                 <div class="flex justify-end">
@@ -191,9 +202,9 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Trạng thái</label>
                         <select name="status" class="w-full py-2.5 px-4 rounded-xl bg-slate-800 border border-white/10 text-slate-200 focus:border-primary/50 focus:ring-primary focus:outline-none transition-all">
-                            <option value="0">Upcoming</option>
-                            <option value="1">NowShowing</option>
-                            <option value="2">NoShow</option>
+                            <option value="0">Sắp chiếu</option>
+                            <option value="1">Đang chiếu</option>
+                            <option value="2">Ngừng chiếu</option>
                         </select>
                     </div>
                 </div>
