@@ -5,10 +5,12 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets a screen by id.
 /// </summary>
-public class GetScreenByIdQuery : IQuery<ScreenDetailDto?>
+public class GetScreenByIdQuery : ICachableQuery<ScreenDetailDto?>
 {
     public Guid Id { get; set; }
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => ScreenCacheKeys.GetScreenById(Id);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>

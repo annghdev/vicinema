@@ -5,7 +5,7 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets screens with pagination, filtering, and sorting.
 /// </summary>
-public class GetPagedScreensQuery : IQuery<PagedResult<ScreenDto>>
+public class GetPagedScreensQuery : ICachableQuery<PagedResult<ScreenDto>>
 {
     public int PageNumber { get; set; } = 1;
     public int PageSize { get; set; } = 20;
@@ -16,6 +16,8 @@ public class GetPagedScreensQuery : IQuery<PagedResult<ScreenDto>>
     public string SortBy { get; set; } = "createdAt";
     public string SortDirection { get; set; } = "desc";
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => ScreenCacheKeys.GetPagedScreens(PageNumber, PageSize, CinemaId, Type, IsActive, SortBy, SortDirection);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>
