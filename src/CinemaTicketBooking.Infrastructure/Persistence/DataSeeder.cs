@@ -142,11 +142,11 @@ public class DataSeeder(
     private static List<Slide> SeedSlides()
     {
         return [
-            Slide.Create("MORTAL KOMBAT II", "Cuộc chiến sinh tử tiếp tục bùng nổ với những võ sĩ huyền thoại.", "https://images.unsplash.com/photo-1542204165-65bf26472b9b", "/movies", 1, SlideType.ShowingMovie, "https://www.youtube.com/watch?v=TcMBFSGVi1c"),
-            Slide.Create("DORAEMON MOVIE 45", "Tân Nobita và lâu đài dưới đáy biển - Hành trình khám phá đại dương kỳ ảo.", "https://images.unsplash.com/photo-1518709268805-4e9042af9f23", "/movies", 2, SlideType.UpcomingMovie),
-            Slide.Create("LỄ HỘI PHIM:CIBEF 2026", "Tham gia ngay lễ hội phim quốc tế lớn nhất năm tại Absolute Cinema.", "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd", "/promos/cibef-2026", 3, SlideType.Event),
-            Slide.Create("KHUYẾN MÃI MÙA HÈ", "Giảm giá bắp và nước ngọt trong suốt mùa hè cho học sinh - sinh viên.", "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd", "/promos/cibef-2026", 4, SlideType.Event),
-            Slide.Create("SHIN - CẬU BÉ BÚT CHÌ", "Quậy tung Vương quốc Nguệch ngoạc cùng 4 dũng sĩ bất ổn.", "https://images.unsplash.com/photo-1536440136628-849c177e76a1", "/movies", 5, SlideType.ShowingMovie, "https://www.youtube.com/watch?v=JfVOs4VSpmA"),
+            Slide.Create("MORTAL KOMBAT II", "Cuộc chiến sinh tử tiếp tục bùng nổ với những võ sĩ huyền thoại.", "https://image.tmdb.org/t/p/w780/xqk38PWupGGQoKpRxJTYvwwj6Ar.jpg", "/movies", 1, SlideType.ShowingMovie, "https://www.youtube.com/watch?v=TcMBFSGVi1c"),
+            Slide.Create("DORAEMON MOVIE 45", "Tân Nobita và lâu đài dưới đáy biển - Hành trình khám phá đại dương kỳ ảo.", "https://cdn2.tuoitre.vn/zoom/700_525/471584752817336320/2025/9/9/doraemon-1-scaled-175740409238553596678-0-28-1318-2545-crop-17574041212811388695632.jpg", "/movies", 2, SlideType.UpcomingMovie),
+            Slide.Create("LỄ HỘI PHIM:CIBEF 2026", "Tham gia ngay lễ hội phim quốc tế lớn nhất năm tại Absolute Cinema.", "https://thethaovanhoa.mediacdn.vn/372676912336973824/2026/4/20/anh-chup-man-hinh-2026-04-20-104403-177665715282833172379.png", "/promos/cibef-2026", 3, SlideType.Event),
+            Slide.Create("ƯU ĐÃI MÙA HÈ", "Giảm giá bắp và nước ngọt trong suốt mùa hè cho học sinh - sinh viên.", "https://m.touchcinema.com/storage/01-2019/1440x720-1.png", "/promos/cibef-2026", 4, SlideType.Event),
+            Slide.Create("SHIN - CẬU BÉ BÚT CHÌ", "Quậy tung Vương quốc Nguệch ngoạc cùng 4 dũng sĩ bất ổn.", "https://media.lottecinemavn.com/Media/MovieFile/MovieImg/202604/12192_105_100001.jpg", "/movies", 5, SlideType.ShowingMovie, "https://www.youtube.com/watch?v=JfVOs4VSpmA"),
         ];
     }
 
@@ -157,44 +157,44 @@ public class DataSeeder(
         // --- 10 Now Showing - Real Data Vietnam May 2026 ---
         
         // 1. Shin - Cậu Bé Bút Chì
-        var m1 = Movie.Create("Shin – Cậu Bé Bút Chì: Quậy Tung Vương Quốc Nguệch Ngoạc", "Cậu bé Shin vô tình nắm giữ cây bút chì màu kỳ diệu để bảo vệ vương quốc Rakuga.", "https://images.unsplash.com/photo-1536440136628-849c177e76a1", "Toho", "Masakazu Hashimoto", "https://www.youtube.com/watch?v=TcMBFSGVi1c", 104, MovieGenre.Animation, MovieStatus.NowShowing, 15000000m);
+        var m1 = Movie.Create("Shin – Cậu Bé Bút Chì: Quậy Tung Vương Quốc Nguệch Ngoạc", "Cậu bé Shin vô tình nắm giữ cây bút chì màu kỳ diệu để bảo vệ vương quốc Rakuga.", "https://iguov8nhvyobj.vcdn.cloud/media/catalog/product/cache/1/image/c5f0a1eff4c394a251036189ccddaacd/p/o/poster_shin_2020_4x5.jpg", "Toho", "Masakazu Hashimoto", "https://www.youtube.com/watch?v=TcMBFSGVi1c", 104, MovieGenre.Animation, MovieStatus.NowShowing, 15000000m);
         m1.Id = MovieId1;
         movies.Add(m1);
 
         // 2. Mortal Kombat II
-        var m2 = Movie.Create("Mortal Kombat II: Cuộc Chiến Sinh Tử", "Cuộc chiến khốc liệt giữa phe Địa Giới và kẻ ác bước vào giai đoạn quyết định.", "https://images.unsplash.com/photo-1542204165-65bf26472b9b", "Warner Bros.", "Simon McQuoid", "https://www.youtube.com/watch?v=pBk4NYhWNMM", 125, MovieGenre.Action, MovieStatus.NowShowing, 25000000m);
+        var m2 = Movie.Create("Mortal Kombat II: Cuộc Chiến Sinh Tử", "Cuộc chiến khốc liệt giữa phe Địa Giới và kẻ ác bước vào giai đoạn quyết định.", "https://image-worker.momocdn.net/convert-webp/img/22111787647037391-mkii.png?size=SM&referer=cinema.momocdn.net", "Warner Bros.", "Simon McQuoid", "https://www.youtube.com/watch?v=pBk4NYhWNMM", 125, MovieGenre.Action, MovieStatus.NowShowing, 25000000m);
         m2.Id = MovieId2;
         movies.Add(m2);
 
         // 3. Thẩm Mỹ Viện Âm Phủ
-        movies.Add(Movie.Create("Thẩm Mỹ Viện Âm Phủ", "Câu chuyện kinh dị về Thanh rơi vào vòng xoáy của các nghi lễ ma quái tại một thẩm mỹ viện hẻo lánh.", "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba", "VN Films", "Đỗ Đức Thịnh", "https://www.youtube.com/watch?v=uYPbbksJxIg", 110, MovieGenre.Horror, MovieStatus.NowShowing, 12000000m));
+        movies.Add(Movie.Create("Làng Quỷ Quái", "Câu chuyện kinh dị về Thanh rơi vào vòng xoáy của các nghi lễ ma quái tại một thẩm mỹ viện hẻo lánh.", "https://cinema.momocdn.net/convert-webp/img/21875604070271729-langquyquai.png?size=SM", "VN Films", "Đỗ Đức Thịnh", "https://www.youtube.com/watch?v=uYPbbksJxIg", 110, MovieGenre.Horror, MovieStatus.NowShowing, 12000000m));
 
         // 4. Yêu Nữ Thích Hàng Hiệu 2
-        movies.Add(Movie.Create("Yêu Nữ Thích Hàng Hiệu 2", "Sự trở lại của bà trùm thời trang Miranda Priestly và cuộc đối đầu với người trợ lý cũ.", "https://images.unsplash.com/photo-1509281373149-e957c6296406", "Disney", "David Frankel", "https://www.youtube.com/watch?v=JfVOs4VSpmA", 115, MovieGenre.Comedy, MovieStatus.NowShowing, 180000000m));
+        movies.Add(Movie.Create("Yêu Nữ Thích Hàng Hiệu 2", "Sự trở lại của bà trùm thời trang Miranda Priestly và cuộc đối đầu với người trợ lý cũ.", "https://cinema.momocdn.net/convert-webp/img/109158125300908710-Prada.jpg?size=SM", "Disney", "David Frankel", "https://www.youtube.com/watch?v=JfVOs4VSpmA", 115, MovieGenre.Comedy, MovieStatus.NowShowing, 180000000m));
 
         // 5. Gấu Boonie
-        movies.Add(Movie.Create("Gấu Boonie: Kungfu Ẩn Sĩ", "Hành trình tầm sư học đạo đầy hài hước của anh em nhà gấu.", "https://images.unsplash.com/photo-1585647347483-22b66260dfff", "Fantawild", "Huida Lin", "https://www.youtube.com/watch?v=JfVOs4VSpmA", 95, MovieGenre.Animation, MovieStatus.NowShowing, 900000000m));
+        movies.Add(Movie.Create("Gấu Boonie: Kungfu Ẩn Sĩ", "Hành trình tầm sư học đạo đầy hài hước của anh em nhà gấu.", "https://iguov8nhvyobj.vcdn.cloud/media/catalog/product/cache/1/image/c5f0a1eff4c394a251036189ccddaacd/7/0/700x1000_4.jpg", "Fantawild", "Huida Lin", "https://www.youtube.com/watch?v=JfVOs4VSpmA", 95, MovieGenre.Animation, MovieStatus.NowShowing, 900000000m));
 
         // 6. Phi Vụ Thanh Toán
-        movies.Add(Movie.Create("Phi Vụ Thanh Toán", "Một vụ giết người bí ẩn kéo theo những âm mưu thâm độc trong giới thượng lưu.", "https://images.unsplash.com/photo-1517602302552-471fe67acf66", "CJ ENM", "Park Sang-hyun", null, 118, MovieGenre.Thriller, MovieStatus.NowShowing, 110000000m));
+        movies.Add(Movie.Create("Phi Vụ Thanh Toán", "Một vụ giết người bí ẩn kéo theo những âm mưu thâm độc trong giới thượng lưu.", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTt6JV_skzTxE5Y9WgaTJxA_n9D0Vc_qrpDTw&s", "CJ ENM", "Park Sang-hyun", null, 118, MovieGenre.Thriller, MovieStatus.NowShowing, 110000000m));
 
         // 7. Slime: Nước Mắt Đại Dương
-        movies.Add(Movie.Create("Lúc Đó Tôi Đã Chuyển Sinh Thành Slime: Nước Mắt Đại Dương", "Rimuru bắt đầu chuyến phiêu lưu mới tại vương quốc biển xa xôi.", "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0", "Bandai Namco", "Yasuhito Kikuchi", null, 108, MovieGenre.Animation, MovieStatus.NowShowing, 130000000m));
+        movies.Add(Movie.Create("Lúc Đó Tôi Đã Chuyển Sinh Thành Slime: Nước Mắt Đại Dương", "Rimuru bắt đầu chuyến phiêu lưu mới tại vương quốc biển xa xôi.", "https://iguov8nhvyobj.vcdn.cloud/media/catalog/product/cache/1/image/c5f0a1eff4c394a251036189ccddaacd/p/o/poster_luc_do_toi_da_chuyen_thanh_slime_nuoc_mat_dai_duong_2.jpg", "Bandai Namco", "Yasuhito Kikuchi", null, 108, MovieGenre.Animation, MovieStatus.NowShowing, 130000000m));
 
         // 8. Vây Hãm: Kẻ Trừng Phạt
-        movies.Add(Movie.Create("Vây Hãm: Kẻ Trừng Phạt", "Thanh tra Ma Seok-do đối đầu với một tổ chức tội phạm công nghệ quy mô lớn.", "https://images.unsplash.com/photo-1536440136628-849c177e76a1", "ABO Entertainment", "Heo Myung-haeng", null, 109, MovieGenre.Action, MovieStatus.NowShowing, 200000000m));
+        movies.Add(Movie.Create("Vây Hãm: Kẻ Trừng Phạt", "Thanh tra Ma Seok-do đối đầu với một tổ chức tội phạm công nghệ quy mô lớn.", "https://upload.wikimedia.org/wikipedia/vi/b/b5/THE_ROUNDUP_PUNISHMENT_-_Vietnam_poster.jpg", "ABO Entertainment", "Heo Myung-haeng", null, 109, MovieGenre.Action, MovieStatus.NowShowing, 200000000m));
 
         // 9. Phổi Sắt
-        movies.Add(Movie.Create("Phổi Sắt", "Một thủy thủ bị nhốt trong tàu ngầm mini khám phá đại dương máu trên hành tinh xa lạ.", "https://images.unsplash.com/photo-1536440136628-849c177e76a1", "Markiplier", "Mark Fischbach", null, 85, MovieGenre.Horror, MovieStatus.NowShowing, 7000000000m));
+        movies.Add(Movie.Create("Phổi Sắt", "Một thủy thủ bị nhốt trong tàu ngầm mini khám phá đại dương máu trên hành tinh xa lạ.", "https://cinestar.com.vn/_next/image/?url=https%3A%2F%2Fapi-website.cinestar.com.vn%2Fmedia%2Fwysiwyg%2FPosters%2F05-2026%2Firon-lung-poster.jpg&w=3840&q=75", "Markiplier", "Mark Fischbach", null, 85, MovieGenre.Horror, MovieStatus.NowShowing, 7000000000m));
 
         // 10. Đội Thám Tử Cừu
-        movies.Add(Movie.Create("Đội Thám Tử Cừu: Án Mạng Lúc Nửa Đêm", "Vụ án mạng bí ẩn trong trang trại đòi hỏi sự thông minh của biệt đội thám tử cừu.", "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd", "Studio Canal", "Richard Starzak", null, 92, MovieGenre.Animation, MovieStatus.NowShowing, 6000000000m));
+        movies.Add(Movie.Create("Đội Thám Tử Cừu: Án Mạng Lúc Nửa Đêm", "Vụ án mạng bí ẩn trong trang trại đòi hỏi sự thông minh của biệt đội thám tử cừu.", "https://image.tmdb.org/t/p/w500/fEpV3vWBQ1eZefIIcwaiTduXEEP.jpg", "Studio Canal", "Richard Starzak", null, 92, MovieGenre.Animation, MovieStatus.NowShowing, 6000000000m));
 
 
         // --- 6 Upcoming - Real Data Vietnam May 2026 ---
 
         // 1. Doraemon Movie 45
-        var u1 = Movie.Create("Doraemon Movie 45: Tân Nobita Và Lâu Đài Dưới Đáy Biển", "Chuyến phiêu lưu mới của nhóm bạn Doraemon tại thế giới bí ẩn dưới đáy biển.", "https://images.unsplash.com/photo-1518709268805-4e9042af9f23", "Shin-Ei Animation", "Susumu Mitsunaka", null, 105, MovieGenre.Animation, MovieStatus.Upcoming, 2000000m);
+        var u1 = Movie.Create("Doraemon Movie 45: Tân Nobita Và Lâu Đài Dưới Đáy Biển", "Chuyến phiêu lưu mới của nhóm bạn Doraemon tại thế giới bí ẩn dưới đáy biển.", "https://iguov8nhvyobj.vcdn.cloud/media/catalog/product/cache/1/image/1800x/71252117777b696995f01934522c402d/t/e/teaser_drm26_finalize.jpg", "Shin-Ei Animation", "Susumu Mitsunaka", null, 105, MovieGenre.Animation, MovieStatus.Upcoming, 2000000m);
         u1.Id = MovieId3;
         movies.Add(u1);
 
@@ -202,16 +202,16 @@ public class DataSeeder(
         movies.Add(Movie.Create("The Mandalorian and Grogu", "Hành trình mới của Mando và Grogu sau các sự kiện trong series.", "https://images.unsplash.com/photo-1440404653325-ab127d49abc1", "Lucasfilm", "Jon Favreau", null, 130, MovieGenre.SciFi, MovieStatus.Upcoming, 30000000m));
 
         // 3. Ma Da Hàn Quốc
-        movies.Add(Movie.Create("Ma Da Hàn Quốc: Hồ Nuốt Người", "Truyền thuyết kinh dị về linh hồn dưới hồ nước đang chờ đợi kẻ xấu số tiếp theo.", "https://images.unsplash.com/photo-1585647347483-22b66260dfff", "Showbox", "Jang Jae-hyun", null, 122, MovieGenre.Horror, MovieStatus.Upcoming, 150000000m));
+        movies.Add(Movie.Create("Ma Da Hàn Quốc: Hồ Nuốt Người", "Truyền thuyết kinh dị về linh hồn dưới hồ nước đang chờ đợi kẻ xấu số tiếp theo.", "https://cinema.momocdn.net/convert-webp/img/22108878578865321-madahnaquoc.png?size=SM", "Showbox", "Jang Jae-hyun", null, 122, MovieGenre.Horror, MovieStatus.Upcoming, 150000000m));
 
         // 4. Mother Mary
-        movies.Add(Movie.Create("Mother Mary: Hào Quang Đơn Độc", "Mối quan hệ phức tạp giữa một ngôi sao nhạc Pop và nhà thiết kế thời trang tài năng.", "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0", "A24", "David Lowery", null, 112, MovieGenre.Drama, MovieStatus.Upcoming, 9000000000m));
+        movies.Add(Movie.Create("Mother Mary: Hào Quang Đơn Độc", "Mối quan hệ phức tạp giữa một ngôi sao nhạc Pop và nhà thiết kế thời trang tài năng.", "https://cdn.galaxycine.vn/media/2026/5/15/mothermary-adapt-1200-x-1800_1778804222388.jpg", "A24", "David Lowery", null, 112, MovieGenre.Drama, MovieStatus.Upcoming, 9000000000m));
 
         // 5. Một Thời Ta Đã Yêu
-        movies.Add(Movie.Create("Một Thời Ta Đã Yêu", "Câu chuyện tình lãng mạn đầy nuối tiếc của hai người trẻ giữa Sài Gòn hoa lệ.", "https://images.unsplash.com/photo-1517602302552-471fe67acf66", "Skyline", "Nguyễn Phan Quang Bình", null, 106, MovieGenre.Romance, MovieStatus.Upcoming, 8000000000m));
+        movies.Add(Movie.Create("Một Thời Ta Đã Yêu", "Câu chuyện tình lãng mạn đầy nuối tiếc của hai người trẻ giữa Sài Gòn hoa lệ.", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXidKl-d3AdTM8Ud5JL81hNuYQ0JLfe6Qv9w&s", "Skyline", "Nguyễn Phan Quang Bình", null, 106, MovieGenre.Romance, MovieStatus.Upcoming, 8000000000m));
 
         // 6. KHÁCH
-        movies.Add(Movie.Create("KHÁCH", "Vị khách không mời mang theo những bí mật chết người đến ngôi biệt thự hẻo lánh.", "https://images.unsplash.com/photo-1509281373149-e957c6296406", "A24", "Ti West", null, 102, MovieGenre.Thriller, MovieStatus.Upcoming, 7000000000m));
+        movies.Add(Movie.Create("KHÁCH", "Vị khách không mời mang theo những bí mật chết người đến ngôi biệt thự hẻo lánh.", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRrfRHEFamRB3D7TstWJW76xS3Ne298r6LxDg&s", "A24", "Ti West", null, 102, MovieGenre.Thriller, MovieStatus.Upcoming, 7000000000m));
 
 
         // --- 4 Classic / No Show ---
