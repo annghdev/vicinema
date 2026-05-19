@@ -285,7 +285,7 @@ Key configuration sections in `appsettings.json`:
 ## Screenshots
 
 ### Home page
-![Landing page](assets/frontend/home-page.png)
+![Home page](assets/frontend/home-page.png)
 ### Showtime schedules page
 ![Showtime schedules page](assets/frontend/showtimes.png)
 ### Seat Selection page
@@ -300,12 +300,8 @@ Key configuration sections in `appsettings.json`:
 
 ### Admin Dashboard
 ![Admin Dashboard](assets/admin/dashboard.png)
-### Admin Manage Movies
-![Admin Manage Movies](assets/admin/movie-management.png)
 ### Admin Manage Showtimes
 ![Admin Manage Showtime](assets/admin/showtime-schedules.png)
-### Admin Manage Cinemas
-![Admin Manage Booking](assets/admin/cinema-management.png)
 ### Admin Design Screen
 ![Admin Design Seat](assets/admin/create-screen.png)
 ### Admin Manage Permissions

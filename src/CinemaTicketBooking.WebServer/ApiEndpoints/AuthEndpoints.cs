@@ -51,6 +51,9 @@ public static class AuthEndpoints
         group.MapDelete("/account", DeleteAccountAsync)
             .RequireAuthorization();
 
+        group.MapPost("/change-password", ChangePasswordAsync)
+            .RequireAuthorization();
+
         group.MapGet("/external/google", GoogleChallenge)
             .AllowAnonymous();
 
@@ -270,6 +273,33 @@ public static class AuthEndpoints
             return Results.ValidationProblem(result.ErrorDictionary());
 
         auth.ClearRefreshCookie();
+        return Results.NoContent();
+    }
+
+    /// <summary>
+    /// Changes the password of the authenticated user.
+    /// </summary>
+    private static async Task<IResult> ChangePasswordAsync(
+        [FromBody] ChangePasswordRequest dto,
+        UserManager<Account> userManager,
+        ClaimsPrincipal principal,
+        CancellationToken ct)
+    {
+        // 1. Resolve user ID from claims principal
+        var id = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(id, out var userId))
+            return Results.Unauthorized();
+
+        // 2. Fetch the corresponding user account
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+            return Results.NotFound();
+
+        // 3. Update the password using ASP.NET Core Identity
+        var result = await userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
+        if (!result.Succeeded)
+            return Results.ValidationProblem(result.ErrorDictionary());
+
         return Results.NoContent();
     }
 
