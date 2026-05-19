@@ -11,6 +11,7 @@ public static class ScreenEndpoints
     public static void MapScreenEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/screens")
+            .RequireRateLimiting("fixed")
             .WithTags("Screens")
             .AllowAnonymous();
 
@@ -143,3 +144,4 @@ public sealed class GetScreenDropdownRequest
     public bool OnlyActive { get; init; } = true;
     public int MaxItems { get; init; } = 100;
 }
+

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using CinemaTicketBooking.WebServer.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Diagnostics;
 using CinemaTicketBooking.Application.Common.Auth;
 
@@ -12,7 +13,8 @@ using Wolverine;
 namespace CinemaTicketBooking.WebServer.Controllers
 {
     [Authorize(AuthenticationSchemes = "Identity.Application")]
-    public class HomeController(IAuthorizationService authorizationService, IMessageBus bus) : Controller
+    [EnableRateLimiting("fixed")]
+public class HomeController(IAuthorizationService authorizationService, IMessageBus bus) : Controller
     {
         public async Task<IActionResult> Index()
         {
@@ -76,3 +78,4 @@ namespace CinemaTicketBooking.WebServer.Controllers
         }
     }
 }
+

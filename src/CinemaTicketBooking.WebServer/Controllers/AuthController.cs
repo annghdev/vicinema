@@ -2,12 +2,14 @@ using CinemaTicketBooking.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CinemaTicketBooking.WebServer.Controllers;
 
 /// <summary>
 /// Handles authentication for the admin portal.
 /// </summary>
+[EnableRateLimiting("fixed")]
 public class AuthController(SignInManager<Account> signInManager, UserManager<Account> userManager) : Controller
 {
     /// <summary>
@@ -82,3 +84,4 @@ public class AuthController(SignInManager<Account> signInManager, UserManager<Ac
         return RedirectToAction("Login");
     }
 }
+

@@ -16,7 +16,8 @@ public static class BookingEndpoints
     /// </summary>
     public static void MapBookingEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/bookings").WithTags("Bookings");
+        var group = app.MapGroup("/api/bookings")
+            .RequireRateLimiting("fixed").WithTags("Bookings");
         group.MapGet("/{bookingId:guid}", GetBookingById);
         group.MapGet("/history/{customerId:guid}", GetBookingsByCustomerId);
         group.MapPost("/", CreateBooking);
@@ -117,3 +118,4 @@ public record RetryPaymentRequest(
     string IpAddress,
     bool ReplacePendingPayment = false
 );
+

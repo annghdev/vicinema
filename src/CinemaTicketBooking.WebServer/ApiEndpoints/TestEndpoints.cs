@@ -8,7 +8,9 @@ public static class TestEndpoints
 {
     public static void MapTestEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/test").WithTags("Test");
+        var group = app.MapGroup("/api/test")
+            .RequireRateLimiting("fixed")
+            .WithTags("Test");
 
         group.MapPost("/brevo", async ([FromServices] IEmailSender emailSender, [FromQuery] string email = "nghuuan2803@gmail.com") =>
         {
@@ -47,3 +49,4 @@ public static class TestEndpoints
         .WithDescription("Sends a test booking confirmation email via Brevo.");
     }
 }
+

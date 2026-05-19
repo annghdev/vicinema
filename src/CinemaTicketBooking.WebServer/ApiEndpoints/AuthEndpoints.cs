@@ -25,7 +25,8 @@ public static class AuthEndpoints
     /// </summary>
     public static void MapAuthEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/auth").WithTags("Auth");
+        var group = app.MapGroup("/api/auth")
+            .RequireRateLimiting("sliding").WithTags("Auth");
 
         group.MapPost("/register", RegisterAsync)
             .AllowAnonymous();
@@ -504,3 +505,4 @@ public static class AuthEndpoints
         };
     }
 }
+

@@ -4,8 +4,11 @@
   </Folder>
   <Folder Name="/solution-items/">
     <File Path=".dockerignore" />
+    <File Path=".env" />
+    <File Path=".env.example" />
     <File Path=".gitattributes" />
     <File Path=".gitignore" />
+    <File Path="docker-compose.yaml" />
     <File Path="README.md" />
   </Folder>
   <Folder Name="/src/">

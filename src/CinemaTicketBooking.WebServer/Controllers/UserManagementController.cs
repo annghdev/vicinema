@@ -3,6 +3,7 @@ using CinemaTicketBooking.Application.Common.Auth;
 using CinemaTicketBooking.Application.Features;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Wolverine;
 
 using Microsoft.AspNetCore.Identity;
@@ -16,6 +17,7 @@ namespace CinemaTicketBooking.WebServer.Controllers;
 /// Handles user account management for the admin portal.
 /// </summary>
 [Authorize(AuthenticationSchemes = "Identity.Application")]
+[EnableRateLimiting("fixed")]
 public class UserManagementController(IMessageBus bus, RoleManager<Role> roleManager) : Controller
 {
     /// <summary>
@@ -180,3 +182,4 @@ public class UserManagementController(IMessageBus bus, RoleManager<Role> roleMan
     public record ResetPasswordAdminRequest(Guid AccountId);
     public record LockUnlockRequest(Guid AccountId);
 }
+

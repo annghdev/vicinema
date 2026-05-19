@@ -5,6 +5,7 @@ using CinemaTicketBooking.Domain;
 using CinemaTicketBooking.WebServer.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Wolverine;
 
 namespace CinemaTicketBooking.WebServer.Controllers;
@@ -13,6 +14,7 @@ namespace CinemaTicketBooking.WebServer.Controllers;
 /// Handles concession management server-side rendered pages.
 /// </summary>
 [Authorize(AuthenticationSchemes = "Identity.Application")]
+[EnableRateLimiting("fixed")]
 public class ConcessionController(IMessageBus bus) : Controller
 {
     /// <summary>
@@ -160,3 +162,4 @@ public class ConcessionController(IMessageBus bus) : Controller
         }
     }
 }
+
