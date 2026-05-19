@@ -5,12 +5,14 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets cinemas for dropdown data source.
 /// </summary>
-public class GetCinemaDropdownQuery : IQuery<IReadOnlyList<CinemaDropdownDto>>
+public class GetCinemaDropdownQuery : ICachableQuery<IReadOnlyList<CinemaDropdownDto>>
 {
     public string? SearchTerm { get; set; }
     public bool OnlyActive { get; set; } = true;
     public int MaxItems { get; set; } = 100;
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => CinemaCacheKeys.GetCinemaDropdown(SearchTerm, OnlyActive, MaxItems);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>

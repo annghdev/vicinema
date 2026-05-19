@@ -7,11 +7,12 @@ namespace CinemaTicketBooking.Application.Features;
 /// </summary>
 public class GetCinemasQuery : ICachableQuery<IReadOnlyList<CinemaDto>>
 {
+    public bool? IsActive { get; set; }
     public string CorrelationId { get; set; } = string.Empty;
 
-    public string CacheKey => "cinemas_all";
+    public string CacheKey => CinemaCacheKeys.GetCinemas(IsActive);
 
-    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(2);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>
