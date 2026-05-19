@@ -144,14 +144,9 @@ public class DataSeeder(
         return [
             Slide.Create("MORTAL KOMBAT II", "Cuộc chiến sinh tử tiếp tục bùng nổ với những võ sĩ huyền thoại.", "https://images.unsplash.com/photo-1542204165-65bf26472b9b", "/movies", 1, SlideType.ShowingMovie, "https://www.youtube.com/watch?v=TcMBFSGVi1c"),
             Slide.Create("DORAEMON MOVIE 45", "Tân Nobita và lâu đài dưới đáy biển - Hành trình khám phá đại dương kỳ ảo.", "https://images.unsplash.com/photo-1518709268805-4e9042af9f23", "/movies", 2, SlideType.UpcomingMovie),
-            Slide.Create("MANDALORIAN & GROGU", "Sự trở lại của thợ săn tiền thưởng và cậu bé Grogu trên màn ảnh rộng.", "https://images.unsplash.com/photo-1440404653325-ab127d49abc1", "/movies", 3, SlideType.UpcomingMovie),
-            Slide.Create("LỄ HỘI PHIM:CIBEF 2026", "Tham gia ngay lễ hội phim quốc tế lớn nhất năm tại Absolute Cinema.", "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd", "/promos/cibef-2026", 4, SlideType.Event),
+            Slide.Create("LỄ HỘI PHIM:CIBEF 2026", "Tham gia ngay lễ hội phim quốc tế lớn nhất năm tại Absolute Cinema.", "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd", "/promos/cibef-2026", 3, SlideType.Event),
+            Slide.Create("KHUYẾN MÃI MÙA HÈ", "Giảm giá bắp và nước ngọt trong suốt mùa hè cho học sinh - sinh viên.", "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd", "/promos/cibef-2026", 4, SlideType.Event),
             Slide.Create("SHIN - CẬU BÉ BÚT CHÌ", "Quậy tung Vương quốc Nguệch ngoạc cùng 4 dũng sĩ bất ổn.", "https://images.unsplash.com/photo-1536440136628-849c177e76a1", "/movies", 5, SlideType.ShowingMovie, "https://www.youtube.com/watch?v=JfVOs4VSpmA"),
-            Slide.Create("YÊU NỮ THÍCH HÀNG HIỆU 2", "Sự trở lại của bà trùm thời trang Miranda Priestly.", "https://images.unsplash.com/photo-1509281373149-e957c6296406", "/movies", 6, SlideType.ShowingMovie),
-            Slide.Create("GẤU BOONIE:KUNGFU ẨN SĨ", "Hành trình tầm sư học đạo đầy hài hước của anh em nhà gấu.", "https://images.unsplash.com/photo-1585647347483-22b66260dfff", "/movies", 7, SlideType.ShowingMovie),
-            Slide.Create("THẨM MỸ VIỆN ÂM PHỦ", "Bí mật kinh hoàng đằng sau những ca phẫu thuật thay đổi cuộc đời.", "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba", "/movies", 8, SlideType.ShowingMovie, "https://www.youtube.com/watch?v=uYPbbksJxIg"),
-            Slide.Create("PHI VỤ THANH TOÁN", "Cuộc chiến khốc liệt trong giới thượng lưu để giành lấy quyền lực.", "https://images.unsplash.com/photo-1517602302552-471fe67acf66", "/movies", 9, SlideType.ShowingMovie),
-            Slide.Create("SLIME:NƯỚC MẮT ĐẠI DƯƠNG", "Rimuru và những người bạn trong cuộc phiêu lưu mới tại vương quốc biển.", "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0", "/movies", 10, SlideType.ShowingMovie),
         ];
     }
 
