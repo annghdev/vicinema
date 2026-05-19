@@ -191,12 +191,11 @@ git clone https://github.com/annghdev/cinema-ticket-booking-app-dotnet10.git
 cd cinema-ticket-booking-app-dotnet10
 
 # 2. Copy and configure environment variables
-cd dockers/development
 cp .env.example .env
 # Edit .env if you need to change ports or credentials
 
-# 3. Start all services
-docker compose up -d
+# 3. Start all services (automatically build local changes)
+docker compose up -d --build
 
 # 4. Access the application
 #    - Frontend (React):   http://localhost:5173
