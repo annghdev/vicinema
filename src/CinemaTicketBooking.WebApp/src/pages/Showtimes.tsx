@@ -82,6 +82,7 @@ function Showtimes() {
           getShowTimes({ date: format(selectedDate, "yyyy-MM-dd"), status: "Upcoming" }),
           getMovies(),
           getCinemas(),
+          new Promise((resolve) => setTimeout(resolve, 500)), // Guarantee minimum 0.5s loading time for smooth UX
         ])
         setShowtimes(showtimesData)
         setMovies(moviesData)

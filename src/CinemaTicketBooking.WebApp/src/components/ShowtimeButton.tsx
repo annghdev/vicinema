@@ -12,22 +12,29 @@ export function ShowtimeButton({ showtime }: { showtime: ShowTimeDto }) {
   return (
     <Link
       to={`/showtimes/${showtime.id}/seats?returnUrl=${returnUrl}`}
-      className={`group flex min-w-[120px] flex-col gap-1.5 rounded-xl border border-outline-variant/20 bg-surface-container-high p-4 transition-all hover:border-primary/50 hover:bg-surface-container-highest hover:shadow-lg ${showtime.availableTicketCount === 0 ? "pointer-events-none opacity-50 grayscale" : "active:scale-[0.98]"}`}
+      className={`group flex min-w-[145px] flex-col gap-1 rounded-xl border border-outline-variant/20 bg-surface-container-high p-3.5 transition-all duration-300 hover:border-primary/50 hover:bg-surface-container-highest hover:shadow-lg hover:scale-[1.02] ${showtime.availableTicketCount === 0 ? "pointer-events-none opacity-50 grayscale" : "active:scale-[0.98]"}`}
     >
+      {/* dòng đầu: thời gian bắt đầu - thời gian kết thúc */}
       <div className="flex items-center justify-between">
-        <span className="rounded bg-secondary/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-secondary shadow-sm">
+        <span className="font-headline text-base font-black tracking-tight text-white group-hover:text-primary transition-colors">
+          {startTimeStr} - {endTimeStr}
+        </span>
+        <span className="material-symbols-outlined text-[16px] text-on-surface-variant transition-transform group-hover:translate-x-0.5 opacity-60">
+          chevron_right
+        </span>
+      </div>
+
+      {/* dòng 2: phòng chiếu | format */}
+      <div className="flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant/90">
+        <span className="uppercase font-black text-amber-500">{showtime.screenCode}</span>
+        <span className="opacity-40">|</span>
+        <span className="text-[10px] font-black uppercase tracking-widest text-secondary">
           {showtime.format || "2D"}
         </span>
-        <span className="material-symbols-outlined text-sm text-on-surface-variant transition-transform group-hover:translate-x-0.5">chevron_right</span>
       </div>
-      <div className="mt-1">
-        <span className="font-headline text-lg font-black tracking-tight text-white">{startTimeStr} <span className="mx-0.5 opacity-40">→</span> {endTimeStr}</span>
-      </div>
-      <div className="flex items-center gap-1.5 text-[11px] font-bold text-on-surface-variant">
-        <span className="material-symbols-outlined text-[14px]">meeting_room</span>
-        {showtime.screenCode}
-      </div>
-      <div className={`text-[10px] font-bold uppercase tracking-wider ${showtime.availableTicketCount > 0 ? "text-primary" : "text-slate-500"}`}>
+
+      {/* dòng 3: tình trạng vé */}
+      <div className={`mt-0.5 text-[10px] font-black uppercase tracking-wider ${showtime.availableTicketCount > 10 ? "text-primary" : showtime.availableTicketCount > 0 ? "text-secondary" : "text-slate-500"}`}>
         {availability}
       </div>
     </Link>

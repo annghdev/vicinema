@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { NavLink, useNavigate } from "react-router-dom"
 import { logout } from "../apis/authApi"
 import { useAuth } from "../contexts/AuthContext"
 import AuthModal from "./AuthModal"
+
+import logo from "../assets/logo.png"
 
 const navItems = [
   { label: "Trang chủ", to: "/" },
@@ -87,10 +89,13 @@ function Header() {
               {isMobileMenuOpen ? "close" : "menu"}
             </button>
             <div
-              className="cursor-pointer font-headline text-xl font-black tracking-tighter text-[#61b4fe] transition-transform active:scale-95 sm:text-2xl"
+              className="flex cursor-pointer items-center gap-2 transition-transform active:scale-95"
               onClick={() => navigate("/")}
             >
-              ABSOLUTE CINEMA
+              <img src={logo} alt="Vicienema" className="h-8 w-auto sm:h-10" />
+              <span className="font-headline text-xl font-black tracking-tighter text-[#61b4fe] sm:text-2xl">
+                VICINEMA
+              </span>
             </div>
           </div>
 
@@ -111,13 +116,13 @@ function Header() {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            <button
+            {/* <button
               type="button"
               aria-label="Tìm kiếm"
               className="material-symbols-outlined text-slate-400 transition-all hover:text-[#00f4fe]"
             >
               search
-            </button>
+            </button> */}
             {authState ? (
               <div className="relative" ref={accountMenuRef}>
                 <button
@@ -168,7 +173,7 @@ function Header() {
               <button
                 type="button"
                 onClick={() => setIsAuthModalOpen(true)}
-                className="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-on-primary shadow-[0_0_15px_rgba(97,180,254,0.3)] transition-all hover:scale-105 hover:shadow-[0_0_20px_rgba(0,244,254,0.5)] active:scale-95 sm:px-6 sm:py-2 sm:text-sm"
+                className="flex items-center gap-2 rounded-sm border border-primary/50 bg-transparent px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary shadow-[0_0_10px_rgba(0,244,254,0.15)] transition-all duration-300 hover:scale-105 hover:border-primary hover:bg-primary/10 hover:shadow-[0_0_20px_rgba(0,244,254,0.4)] active:scale-95 sm:px-6 sm:py-2 sm:text-sm"
               >
                 <span className="material-symbols-outlined text-lg sm:text-xl">account_circle</span>
                 <span>Đăng nhập</span>
@@ -180,9 +185,8 @@ function Header() {
         {/* Mobile Navigation Panel */}
         <div
           ref={mobileMenuRef}
-          className={`absolute left-0 top-[calc(100%-1px)] w-full border-b border-outline-variant/20 bg-background/95 shadow-xl backdrop-blur-md transition-all duration-300 md:hidden ${
-            isMobileMenuOpen ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0 pointer-events-none"
-          }`}
+          className={`absolute left-0 top-[calc(100%-1px)] w-full border-b border-outline-variant/20 bg-background/95 shadow-xl backdrop-blur-md transition-all duration-300 md:hidden ${isMobileMenuOpen ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0 pointer-events-none"
+            }`}
         >
           <nav className="flex flex-col p-4">
             {navItems.map((item) => (
@@ -191,8 +195,7 @@ function Header() {
                 to={item.to}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-xl px-4 py-3 font-headline font-bold transition-all active:scale-[0.98] ${
-                    isActive ? "bg-primary/10 text-[#00f4fe]" : "text-slate-400 hover:bg-white/5"
+                  `flex items-center gap-3 rounded-xl px-4 py-3 font-headline font-bold transition-all active:scale-[0.98] ${isActive ? "bg-primary/10 text-[#00f4fe]" : "text-slate-400 hover:bg-white/5"
                   }`
                 }
               >

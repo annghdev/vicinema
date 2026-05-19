@@ -33,8 +33,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
   const showToast = useCallback((message: string, options?: { title?: string; type?: ToastType }) => {
-    const id = Math.random().toString(36).substring(2, 9)
-    setToasts((prev) => [...prev, { id, message, ...options }])
+    setToasts((prev) => {
+      // 1. Prevent showing duplicate active toasts with the exact same message and type
+      const isDuplicate = prev.some(
+        (t) => t.message === message && t.type === options?.type
+      )
+      if (isDuplicate) {
+        return prev
+      }
+      
+      const id = Math.random().toString(36).substring(2, 9)
+      return [...prev, { id, message, ...options }]
+    })
   }, [])
 
   useEffect(() => {

@@ -42,16 +42,6 @@ function formatLabel(format: string | number) {
   return f
 }
 
-function sectionTagByStatus(status: MovieDto["status"]) {
-  if (status === "NowShowing") {
-    return "NOW SHOWING"
-  }
-  if (status === "Upcoming") {
-    return "COMING SOON"
-  }
-  return "NO SHOW"
-}
-
 function MovieList() {
   const location = useLocation()
   const returnUrl = encodeURIComponent(location.pathname + location.search)
@@ -187,9 +177,6 @@ function MovieList() {
                 >
                   <img src={movie.thumbnailUrl} alt={movie.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-background via-background/35 to-transparent" />
-                  <div className="absolute right-4 top-4 rounded border border-secondary/20 bg-secondary/10 px-3 py-1 text-xs font-bold tracking-widest text-secondary">
-                    {sectionTagByStatus(movie.status)}
-                  </div>
                   <div className="absolute bottom-0 w-full p-6">
                     <p className="text-xs font-semibold tracking-[0.16em] text-secondary">{genreLabel(movie.genre)}</p>
                     <Link to={`/movies/${movie.id}/showtimes`} className="block hover:text-primary transition-colors cursor-pointer">
@@ -271,9 +258,6 @@ function MovieList() {
                       <Link to={`/movies/${movie.id}/showtimes`} className="hover:text-primary transition-colors cursor-pointer">
                         <h3 className="font-headline text-3xl font-black tracking-tight text-on-background group-hover:text-primary transition-colors">{movie.name}</h3>
                       </Link>
-                      <span className="rounded border border-secondary/25 bg-secondary/10 px-2 py-1 text-xs font-bold tracking-widest text-secondary">
-                        NOW SHOWING
-                      </span>
                     </div>
 
                     <p className="mt-2 text-sm text-on-surface-variant">
@@ -300,19 +284,28 @@ function MovieList() {
                       <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant opacity-70">Suất chiếu hôm nay</p>
                       <div className="flex flex-wrap gap-3">
                         {movieShowtimes.slice(0, 8).map((showtime) => {
-                          const time = new Date(showtime.startAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false })
+                          const startTime = new Date(showtime.startAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false })
+                          const endTime = new Date(showtime.endAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false })
                           return (
                             <Link
                               key={showtime.id}
                               to={`/showtimes/${showtime.id}/seats?returnUrl=${returnUrl}`}
-                              className="group flex flex-col items-center justify-center min-w-[70px] rounded-lg border border-outline-variant/30 bg-surface-container/80 py-2 px-3 transition-all hover:border-primary/50 hover:bg-surface-container-highest"
+                              className="group flex flex-col items-center justify-center min-w-[180px] rounded-lg border border-outline-variant/30 bg-surface-container/80 py-2.5 px-4 transition-all duration-300 hover:border-primary/50 hover:bg-surface-container-highest shadow-[0_2px_8px_rgba(0,0,0,0.15)] hover:shadow-[0_4px_16px_rgba(0,244,254,0.15)] hover:scale-[1.02]"
                             >
-                              <span className="text-[10px] font-black tracking-tighter text-secondary opacity-80 uppercase group-hover:text-primary transition-colors">
-                                {formatLabel(showtime.format)}
-                              </span>
-                              <span className="font-headline text-base font-black text-on-background">
-                                {time}
-                              </span>
+                              <div className="flex items-center gap-1.5 text-xs font-bold text-on-background">
+                                <span className="font-headline text-sm font-black text-secondary group-hover:text-secondary transition-colors">
+                                  {startTime} - {endTime}
+                                </span>
+                                <span className="text-[10px] text-on-surface-variant opacity-60">|</span>
+                                <span className="text-[10px] font-black tracking-tight text-secondary uppercase group-hover:text-primary transition-colors">
+                                  {formatLabel(showtime.format)}
+                                </span>
+                              </div>
+                              <div className="mt-1 flex items-center gap-1.5 text-[10px] font-semibold text-on-surface-variant/80">
+                                <span className="uppercase font-black text-amber-500">{showtime.screenCode}</span>
+                                <span className="opacity-50">|</span>
+                                <span className="truncate max-w-[90px]" title={showtime.cinemaName}>{showtime.cinemaName}</span>
+                              </div>
                             </Link>
                           )
                         })}
@@ -324,7 +317,7 @@ function MovieList() {
                         {movieShowtimes.length > 8 && (
                           <Link
                             to={`/movies/${movie.id}/showtimes`}
-                            className="flex h-[52px] items-center justify-center rounded-lg border border-outline-variant/20 bg-surface-variant/20 px-4 text-xs font-bold text-on-surface-variant hover:bg-surface-variant/40"
+                            className="flex h-[56px] items-center justify-center rounded-lg border border-outline-variant/20 bg-surface-variant/20 px-4 text-xs font-bold text-on-surface-variant hover:bg-surface-variant/40 transition-all hover:scale-[1.02]"
                           >
                             +{movieShowtimes.length - 8} suất
                           </Link>
