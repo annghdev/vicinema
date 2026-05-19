@@ -29,6 +29,13 @@ export async function forgotPassword(body: ForgotPasswordRequest): Promise<void>
   })
 }
 
+export async function refreshToken(): Promise<AuthTokenResponse> {
+  const response = await httpClient.post<AuthTokenResponse>("/api/auth/refresh", undefined, {
+    withCredentials: true,
+  })
+  return response.data
+}
+
 export async function logout(): Promise<void> {
   await httpClient.post("/api/auth/logout", undefined, {
     withCredentials: true,
