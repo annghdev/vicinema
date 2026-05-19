@@ -1,4 +1,4 @@
-﻿using CinemaTicketBooking.Application;
+using CinemaTicketBooking.Application;
 using CinemaTicketBooking.Application.Common.PipelineMiddlewares;
 using CinemaTicketBooking.Domain;
 using CinemaTicketBooking.Infrastructure.Persistence;
@@ -42,6 +42,7 @@ public static class WebApplicationBuilderExtensions
             opts.Policies.UseDurableLocalQueues();
 
             // Message pipeline: logging, optional query cache, exception logging (non-HTTP paths).
+            opts.Policies.AddMiddleware(typeof(CorrelationIdWolverineMiddleware));
             opts.Policies.AddMiddleware(typeof(LoggingMiddleware));
             opts.Policies.ForMessagesOfType<ICachableQuery>().AddMiddleware(typeof(CachingMiddleware));
 

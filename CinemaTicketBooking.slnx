@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/docs/">
-    <File Path=".docs/OAuth2-flow.md" />
+    <File Path=".docs/flows/CorrelationId-flow.md" />
+    <File Path=".docs/flows/OAuth2-flow.md" />
   </Folder>
   <Folder Name="/solution-items/">
     <File Path=".dockerignore" />

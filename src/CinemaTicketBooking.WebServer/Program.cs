@@ -23,6 +23,7 @@ builder.AddWolverine();
 builder.AddServiceDefaults();
 
 // Add services to the container.
+builder.Services.AddScoped<ICorrelationIdAccessor, CorrelationIdAccessor>();
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
 
@@ -102,6 +103,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseForwardedHeaders(new ForwardedHeadersOptions
