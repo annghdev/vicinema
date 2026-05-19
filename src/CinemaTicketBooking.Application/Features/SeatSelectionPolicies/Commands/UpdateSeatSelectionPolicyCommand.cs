@@ -39,16 +39,17 @@ public class UpdateSeatSelectionPolicyHandler(IUnitOfWork uow)
             throw new InvalidOperationException($"Seat selection policy with ID '{cmd.Id}' not found.");
         }
 
-        policy.Name = cmd.Name;
-        policy.IsGlobalDefault = cmd.IsGlobalDefault;
-        policy.IsActive = cmd.IsActive;
-        policy.MaxTicketsPerCheckout = cmd.MaxTicketsPerCheckout;
-        policy.MaxRowsPerCheckout = cmd.MaxRowsPerCheckout;
-        policy.OrphanSeatLevel = cmd.OrphanSeatLevel;
-        policy.CheckerboardLevel = cmd.CheckerboardLevel;
-        policy.SplitAcrossAisleLevel = cmd.SplitAcrossAisleLevel;
-        policy.IsolatedRowEndSingleLevel = cmd.IsolatedRowEndSingleLevel;
-        policy.MisalignedRowsLevel = cmd.MisalignedRowsLevel;
+        policy.Update(
+            cmd.Name,
+            cmd.IsGlobalDefault,
+            cmd.IsActive,
+            cmd.MaxTicketsPerCheckout,
+            cmd.MaxRowsPerCheckout,
+            cmd.OrphanSeatLevel,
+            cmd.CheckerboardLevel,
+            cmd.SplitAcrossAisleLevel,
+            cmd.IsolatedRowEndSingleLevel,
+            cmd.MisalignedRowsLevel);
 
         uow.SeatSelectionPolicies.Update(policy);
         await uow.CommitAsync(ct);
