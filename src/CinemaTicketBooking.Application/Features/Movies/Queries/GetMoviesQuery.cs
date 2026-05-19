@@ -5,9 +5,11 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets all movies.
 /// </summary>
-public class GetMoviesQuery : IQuery<IReadOnlyList<MovieDto>>
+public class GetMoviesQuery : ICachableQuery<IReadOnlyList<MovieDto>>
 {
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => MovieCacheKeys.GetMovies();
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>
