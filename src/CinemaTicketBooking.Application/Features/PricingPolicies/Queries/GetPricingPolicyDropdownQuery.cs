@@ -5,12 +5,14 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets pricing policies for dropdown data source.
 /// </summary>
-public class GetPricingPolicyDropdownQuery : IQuery<IReadOnlyList<PricingPolicyDropdownDto>>
+public class GetPricingPolicyDropdownQuery : ICachableQuery<IReadOnlyList<PricingPolicyDropdownDto>>
 {
     public Guid? CinemaId { get; set; }
     public bool OnlyActive { get; set; } = true;
     public int MaxItems { get; set; } = 100;
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => PricingPolicyCacheKeys.GetPricingPolicyDropdown(CinemaId, OnlyActive);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>
