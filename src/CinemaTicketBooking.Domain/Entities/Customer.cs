@@ -3,6 +3,7 @@ namespace CinemaTicketBooking.Domain;
 /// <summary>
 /// Customer represents a person who books tickets.
 /// Can be either a registered user (IsRegistered = true) or a guest identified by SessionId.
+/// Registered customers participate in the loyalty program starting at tier Dong.
 /// </summary>
 public class Customer : AggregateRoot
 {
@@ -16,6 +17,12 @@ public class Customer : AggregateRoot
     public string PhoneNumber { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public bool IsRegistered { get; set; }
+
+    /// <summary>Current loyalty tier. Defaults to Dong for new registered customers.</summary>
+    public LoyaltyTier LoyaltyTier { get; set; } = LoyaltyTier.Bronze;
+
+    /// <summary>Total accumulated loyalty points from successful bookings.</summary>
+    public int AccumulatedPoints { get; set; }
 
     // =============================================================
     // Factory and data mutation
@@ -37,7 +44,9 @@ public class Customer : AggregateRoot
             SessionId = sessionId,
             PhoneNumber = phoneNumber,
             Email = email,
-            IsRegistered = isRegistered
+            IsRegistered = isRegistered,
+            LoyaltyTier = LoyaltyTier.Bronze,
+            AccumulatedPoints = 0
         };
 
         customer.RaiseEvent(new CustomerCreated(
@@ -70,5 +79,45 @@ public class Customer : AggregateRoot
             Name: Name,
             Email: Email,
             PhoneNumber: PhoneNumber));
+    }
+
+    // =============================================================
+    // Loyalty
+    // =============================================================
+
+    /// <summary>
+    /// Adds loyalty points from a successful booking and raises an event.
+    /// </summary>
+    public void AddPoints(int points, Guid bookingId, decimal bookingAmount)
+    {
+        if (points < 0)
+            throw new ArgumentException("Points cannot be negative.", nameof(points));
+
+        AccumulatedPoints += points;
+
+        RaiseEvent(new LoyaltyPointsEarned(
+            CustomerId: Id,
+            PointsEarned: points,
+            TotalPoints: AccumulatedPoints,
+            BookingId: bookingId,
+            BookingAmount: bookingAmount));
+    }
+
+    /// <summary>
+    /// Upgrades the customer's loyalty tier. Only upgrades are allowed (no downgrade).
+    /// </summary>
+    public void UpgradeTier(LoyaltyTier newTier)
+    {
+        if (newTier <= LoyaltyTier)
+            return; // Idempotent — only upgrade, never downgrade
+
+        var previous = LoyaltyTier;
+        LoyaltyTier = newTier;
+
+        RaiseEvent(new LoyaltyTierUpgraded(
+            CustomerId: Id,
+            PreviousTier: previous,
+            NewTier: LoyaltyTier,
+            TotalPoints: AccumulatedPoints));
     }
 }
