@@ -18,6 +18,8 @@ public interface IUnitOfWork
     IPaymentTransactionRepository PaymentTransactions { get; }
     ISlideRepository Slides { get; }
     ILoyaltyTierConfigurationRepository LoyaltyTiers { get; }
+    ICouponTemplateRepository CouponTemplates { get; }
+    ICustomerCouponRepository CustomerCoupons { get; }
 
     Task CommitAsync(CancellationToken cancellationToken = default);
 }

@@ -2,7 +2,7 @@ namespace CinemaTicketBooking.Application.Features;
 
 /// <summary>
 /// Price breakdown for the checkout preview, computed using the same domain logic
-/// as the actual booking — including membership / loyalty discounts.
+/// as the actual booking — including membership / loyalty discounts and coupon discounts.
 /// </summary>
 public record PreviewPricingResponse(
     decimal OriginAmount,
@@ -14,4 +14,8 @@ public record PreviewPricingResponse(
     string? LoyaltyTierName,
     string? LoyaltyTierDescription,
     decimal? TicketDiscountPercent,
-    decimal? ConcessionDiscountPercent);
+    decimal? ConcessionDiscountPercent,
+    // Coupon discount info
+    decimal CouponDiscountAmount = 0m,
+    string? CouponCode = null,
+    string? CouponDescription = null);

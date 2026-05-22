@@ -17,6 +17,11 @@ public class PreviewPricingQuery : IQuery<PreviewPricingResponse>
     public string CustomerEmail { get; set; } = string.Empty;
     public List<CheckoutConcessionSelection> Concessions { get; set; } = [];
     public string CorrelationId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Optional coupon code to apply in the preview.
+    /// </summary>
+    public string? CouponCode { get; set; }
 }
 
 /// <summary>
@@ -68,20 +73,22 @@ public class PreviewPricingHandler(
 
         decimal ticketDiscount = 0m;
         decimal concessionDiscount = 0m;
+        decimal couponDiscountAmount = 0m;
         string? loyaltyTierName = null;
         string? loyaltyTierDescription = null;
         decimal? ticketDiscountPercent = null;
         decimal? concessionDiscountPercent = null;
+        string? resolvedCouponCode = null;
+        string? couponDescription = null;
 
-        // 5. Run discount computation when customer is registered.
+        // Build the temp booking once (used for both loyalty and coupon calculations)
+        var tempBooking = BuildPreviewBooking(
+            query, selectedTickets, resolvedConcessions, originAmount);
+
+        // 5. Run loyalty discount computation when customer is registered.
         if (customer?.IsRegistered == true)
         {
             var activeTiers = await uow.LoyaltyTiers.GetActiveTiersAsync(ct);
-
-            // Build a lightweight in-memory Booking so the domain services can
-            // calculate discount without persisting anything.
-            var tempBooking = BuildPreviewBooking(
-                query, selectedTickets, resolvedConcessions, originAmount);
 
             var aggregator = new DiscountStrategyComposite(discountStrategies);
             aggregator.CalculateTotalDiscount(
@@ -102,17 +109,97 @@ public class PreviewPricingHandler(
             }
         }
 
+        // 6. Handle coupon code if provided.
+        if (!string.IsNullOrWhiteSpace(query.CouponCode))
+        {
+            var (couponDiscount, couponCode, desc) = await ComputeCouponDiscountAsync(
+                query.CouponCode, customer, tempBooking, ct);
+            couponDiscountAmount = couponDiscount;
+            resolvedCouponCode = couponCode;
+            couponDescription = desc;
+        }
+
+        var totalDiscount = ticketDiscount + concessionDiscount + couponDiscountAmount;
+
         return new PreviewPricingResponse(
             OriginAmount: originAmount,
             TicketDiscount: ticketDiscount,
             ConcessionDiscount: concessionDiscount,
-            TotalDiscount: ticketDiscount + concessionDiscount,
-            FinalAmount: Math.Max(0, originAmount - ticketDiscount - concessionDiscount),
+            TotalDiscount: totalDiscount,
+            FinalAmount: Math.Max(0, originAmount - totalDiscount),
             IsRegisteredCustomer: customer?.IsRegistered ?? false,
             LoyaltyTierName: loyaltyTierName,
             LoyaltyTierDescription: loyaltyTierDescription,
             TicketDiscountPercent: ticketDiscountPercent,
-            ConcessionDiscountPercent: concessionDiscountPercent);
+            ConcessionDiscountPercent: concessionDiscountPercent,
+            CouponDiscountAmount: couponDiscountAmount,
+            CouponCode: resolvedCouponCode,
+            CouponDescription: couponDescription);
+    }
+
+    private async Task<(decimal Discount, string Code, string? Description)> ComputeCouponDiscountAsync(
+        string couponCode,
+        Customer? customer,
+        Booking tempBooking,
+        CancellationToken ct)
+    {
+        var code = couponCode.Trim().ToUpperInvariant();
+        var now = DateTimeOffset.UtcNow;
+        CustomerCoupon? customerCoupon = null;
+        CouponTemplate? template = null;
+
+        // Try personal coupon first
+        if (customer?.IsRegistered == true)
+        {
+            customerCoupon = await uow.CustomerCoupons.GetByCustomerAndCodeAsync(customer.Id, code, ct);
+        }
+
+        if (customerCoupon is not null)
+        {
+            customerCoupon.ValidateAvailable(now);
+        }
+        else
+        {
+            // Try public template
+            template = await uow.CouponTemplates.GetByCodeAsync(code, ct);
+            if (template is null)
+                throw new InvalidOperationException("Mã giảm giá không hợp lệ.");
+
+            template.ValidateAvailable(now);
+        }
+
+        var discountType = customerCoupon?.DiscountType ?? template!.DiscountType;
+        var discountValue = customerCoupon?.DiscountValue ?? template!.DiscountValue;
+        var maxDiscountAmount = customerCoupon?.MaxDiscountAmount ?? template!.MaxDiscountAmount;
+        var scope = customerCoupon?.Scope ?? template!.Scope;
+
+        // Calculate qualifying amount
+        decimal qualifyingAmount = scope switch
+        {
+            DiscountScope.All => tempBooking.OriginAmount,
+            DiscountScope.Tickets => tempBooking.Tickets.Sum(t => t.Ticket?.Price ?? 0m),
+            DiscountScope.Concessions => tempBooking.Concessions.Sum(c => (c.Concession?.Price ?? 0m) * c.Quantity),
+            _ => tempBooking.OriginAmount
+        };
+
+        decimal discount;
+        if (discountType == DiscountType.Fixed)
+        {
+            discount = Math.Min(discountValue, qualifyingAmount);
+        }
+        else
+        {
+            discount = qualifyingAmount * discountValue / 100m;
+            if (maxDiscountAmount.HasValue)
+                discount = Math.Min(discount, maxDiscountAmount.Value);
+        }
+
+        discount = Math.Round(discount, 2);
+        var description = customerCoupon is not null
+            ? $"Coupon {customerCoupon.CouponCode}"
+            : template!.Description;
+
+        return (discount, code, description);
     }
 
     private static Booking BuildPreviewBooking(
