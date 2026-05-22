@@ -9,6 +9,11 @@ namespace CinemaTicketBooking.Infrastructure.Persistence;
 public class AppDbContext(DbContextOptions<AppDbContext> options)
     : IdentityDbContext<Account, Role, Guid>(options)
 {
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+        optionsBuilder.AddInterceptors(new UtcSaveChangesInterceptor());
+    }
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<Cinema> Cinemas => Set<Cinema>();
     public DbSet<Movie> Movies => Set<Movie>();
@@ -27,6 +32,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Slide> Slides => Set<Slide>();
     public DbSet<LoyaltyTierConfiguration> LoyaltyTierConfigurations => Set<LoyaltyTierConfiguration>();
+    public DbSet<CouponTemplate> CouponTemplates => Set<CouponTemplate>();
+    public DbSet<CustomerCoupon> CustomerCoupons => Set<CustomerCoupon>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -37,6 +37,7 @@ export async function createBooking(body: CreateBookingRequest): Promise<CreateB
     paymentMethod: body.paymentMethod,
     returnUrl: body.returnUrl,
     ipAddress: body.ipAddress,
+    couponCode: body.couponCode,
   })
   return normalizeResponse(response.data)
 }
@@ -87,6 +88,7 @@ export async function previewPricing(body: PreviewPricingRequest): Promise<Previ
     customerPhoneNumber: body.customerPhoneNumber,
     selectedTicketIds: body.selectedTicketIds,
     concessions: body.concessions,
+    couponCode: body.couponCode,
   })
   return response.data
 }

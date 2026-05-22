@@ -27,6 +27,8 @@ public class EFUnitOfWork(
     private ISlideRepository? _slides;
 
     private ILoyaltyTierConfigurationRepository? _loyaltyTiers;
+    private ICouponTemplateRepository? _couponTemplates;
+    private ICustomerCouponRepository? _customerCoupons;
 
     public ICinemaRepository Cinemas => _cinemas ??= serviceProvider.GetRequiredService<ICinemaRepository>();
     public IMovieRepository Movies => _movies ??= serviceProvider.GetRequiredService<IMovieRepository>();
@@ -41,6 +43,8 @@ public class EFUnitOfWork(
     public IPaymentTransactionRepository PaymentTransactions => _paymentTransactions ??= serviceProvider.GetRequiredService<IPaymentTransactionRepository>();
     public ISlideRepository Slides => _slides ??= serviceProvider.GetRequiredService<ISlideRepository>();
     public ILoyaltyTierConfigurationRepository LoyaltyTiers => _loyaltyTiers ??= serviceProvider.GetRequiredService<ILoyaltyTierConfigurationRepository>();
+    public ICouponTemplateRepository CouponTemplates => _couponTemplates ??= serviceProvider.GetRequiredService<ICouponTemplateRepository>();
+    public ICustomerCouponRepository CustomerCoupons => _customerCoupons ??= serviceProvider.GetRequiredService<ICustomerCouponRepository>();
 
     public async Task CommitAsync(CancellationToken ct = default)
     {

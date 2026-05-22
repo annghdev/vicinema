@@ -1,0 +1,107 @@
+@using CinemaTicketBooking.Application.Features.Coupons
+@using CinemaTicketBooking.Application.Common.Auth
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthorizationService
+@model IReadOnlyList<CouponTemplateDto>
+
+@{
+    Layout = "_Layout";
+    var canManage = (await AuthorizationService.AuthorizeAsync(User, Permissions.CouponsManage)).Succeeded;
+    var sharedCoupons = Model.Where(c => c.Type == "Public").ToList();
+    var templateCoupons = Model.Where(c => c.Type == "Personal").ToList();
+}
+
+<div class="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <!-- Header -->
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h2 class="font-headline text-2xl font-bold text-on-surface flex items-center gap-3">
+                <span class="material-symbols-outlined text-secondary drop-shadow-[0_0_8px_rgba(0,244,254,0.3)]">confirmation_number</span>
+                Quản lý mã giảm giá
+            </h2>
+            <p class="text-sm text-on-surface-variant mt-1">Quản lý mã dùng chung (KOL) và mẫu giảm giá cá nhân cho hội viên.</p>
+        </div>
+        @if (canManage)
+        {
+            <a asp-action="Create" class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-6 py-3 text-sm font-bold text-on-primary shadow-lg shadow-primary/20 transition-transform active:scale-95 hover:scale-[1.02]">
+                <span class="material-symbols-outlined text-lg">add</span>
+                Tạo mã giảm giá
+            </a>
+        }
+    </div>
+
+    @* ─────────────── Mã dùng chung ─────────────── *@
+    <section>
+        <div class="flex items-center gap-3 mb-4">
+            <span class="material-symbols-outlined text-2xl text-secondary">groups</span>
+            <h3 class="font-headline text-xl font-bold text-on-surface">Mã dùng chung</h3>
+            <span class="rounded-full border border-white/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Public</span>
+        </div>
+
+        @if (sharedCoupons.Count == 0)
+        {
+            <div class="rounded-2xl border border-outline-variant/20 bg-surface-container-low/40 p-8 text-center text-on-surface-variant backdrop-blur-xl">
+                <span class="material-symbols-outlined text-3xl mb-2">groups</span>
+                <p>Chưa có mã dùng chung nào.</p>
+            </div>
+        }
+        else
+        {
+            <div class="grid gap-3">
+                @foreach (var coupon in sharedCoupons)
+                {
+                    @await Html.PartialAsync("_CouponCard", coupon, new ViewDataDictionary(ViewData) { { "canManage", canManage } })
+                }
+            </div>
+        }
+    </section>
+
+    @* ─────────────── Mẫu giảm giá (cá nhân) ─────────────── *@
+    <section>
+        <div class="flex items-center gap-3 mb-4">
+            <span class="material-symbols-outlined text-2xl text-secondary">person</span>
+            <h3 class="font-headline text-xl font-bold text-on-surface">Mẫu giảm giá</h3>
+            <span class="rounded-full border border-white/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Personal · Template</span>
+            <p class="text-xs text-on-surface-variant ml-2">Dùng để tặng cá nhân khi hội viên thăng hạng hoặc phát mã từ admin.</p>
+        </div>
+
+        @if (templateCoupons.Count == 0)
+        {
+            <div class="rounded-2xl border border-outline-variant/20 bg-surface-container-low/40 p-8 text-center text-on-surface-variant backdrop-blur-xl">
+                <span class="material-symbols-outlined text-3xl mb-2">person</span>
+                <p>Chưa có mẫu giảm giá nào.</p>
+            </div>
+        }
+        else
+        {
+            <div class="grid gap-3">
+                @foreach (var coupon in templateCoupons)
+                {
+                    @await Html.PartialAsync("_CouponCard", coupon, new ViewDataDictionary(ViewData) { { "canManage", canManage } })
+                }
+            </div>
+        }
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        async function toggleCouponStatus(id, isActive) {
+            try {
+                const response = await fetch('@Url.Action("Toggle", "Coupon")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    alert(data.message);
+                    location.reload();
+                }
+            } catch {
+                alert('Không thể cập nhật trạng thái.');
+                location.reload();
+            }
+        }
+    </script>
+}

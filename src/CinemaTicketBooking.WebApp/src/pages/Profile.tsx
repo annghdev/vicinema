@@ -3,7 +3,9 @@ import { useEffect, useMemo, useState } from "react"
 import { getBookingHistory } from "../apis/bookingApi"
 import { changePassword } from "../apis/authApi"
 import { getCustomerLoyalty, getActiveTiers } from "../apis/loyaltyApi"
+import { getMyCoupons } from "../apis/couponApi"
 import { type BookingHistoryItemDto } from "../types/Booking"
+import { type CustomerCouponDto } from "../types/Coupon"
 import { type CustomerLoyaltyDto, type LoyaltyTierDto, TIER_LABELS, TIER_COLORS, TIER_NUMBER_MAP, TIER_ICONS } from "../types/Loyalty"
 import { useAuth } from "../contexts/AuthContext"
 import { useToast } from "../contexts/ToastContext"
@@ -215,6 +217,10 @@ function Profile() {
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
 
+  // Coupon vault states
+  const [coupons, setCoupons] = useState<CustomerCouponDto[]>([])
+  const [couponsLoading, setCouponsLoading] = useState(false)
+
   useEffect(() => {
     if (activeTab !== "history" || !isAuthenticated || !customerId) {
       return
@@ -253,6 +259,26 @@ function Profile() {
       disposed = true
     }
   }, [customerId, isAuthenticated, pageNumber, activeTab, toastError])
+
+  // Coupon vault loading
+  useEffect(() => {
+    if (activeTab !== "coupons" || !isAuthenticated || !customerId) return
+
+    let disposed = false
+    async function loadCoupons() {
+      setCouponsLoading(true)
+      try {
+        const data = await getMyCoupons()
+        if (!disposed) setCoupons(data)
+      } catch {
+        // non-critical
+      } finally {
+        if (!disposed) setCouponsLoading(false)
+      }
+    }
+    void loadCoupons()
+    return () => { disposed = true }
+  }, [activeTab, isAuthenticated, customerId])
 
   const pageInfoLabel = useMemo(() => `Trang ${pageNumber}/${Math.max(1, totalPages)}`, [pageNumber, totalPages])
 
@@ -384,6 +410,7 @@ function Profile() {
             {[
               { id: "info", label: "Thông tin cá nhân", icon: "person" },
               { id: "benefits", label: "Phúc lợi hội viên", icon: "workspace_premium" },
+              { id: "coupons", label: "Kho mã giảm giá", icon: "redeem" },
               { id: "password", label: "Đổi mật khẩu", icon: "lock" },
               { id: "history", label: "Lịch sử đặt vé", icon: "confirmation_number" },
             ].map((tab) => {
@@ -609,7 +636,94 @@ function Profile() {
               </div>
             )}
 
-            {/* -------------------- TAB 3: ĐỔI MẬT KHẨU -------------------- */}
+            {/* -------------------- TAB 3: KHO MÃ GIẢM GIÁ -------------------- */}
+            {activeTab === "coupons" && (
+              <div className="space-y-8 animate-fadeIn">
+                <div>
+                  <h3 className="font-headline text-2xl font-black text-on-surface flex items-center gap-2">
+                    <span className="material-symbols-outlined text-secondary text-2xl">redeem</span>
+                    <span>Kho mã giảm giá</span>
+                  </h3>
+                  <p className="mt-2 text-sm text-on-surface-variant">
+                    Các mã giảm giá dành riêng cho bạn. Mỗi mã chỉ được sử dụng một lần.
+                  </p>
+                </div>
+
+                {couponsLoading ? (
+                  <div className="flex min-h-[200px] items-center justify-center">
+                    <span className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  </div>
+                ) : coupons.length === 0 ? (
+                  <div className="rounded-2xl border border-outline-variant/20 bg-background/30 p-12 text-center text-on-surface-variant">
+                    <span className="material-symbols-outlined text-4xl mb-3">card_giftcard</span>
+                    <p>Bạn chưa có mã giảm giá nào.</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {coupons.map((c) => (
+                      <article
+                        key={c.id}
+                        className={`rounded-2xl border p-5 transition-all ${
+                          c.isUsed
+                            ? "border-outline-variant/10 bg-surface-container-high/20 opacity-60"
+                            : "border-secondary/20 bg-surface-container-high/40 hover:scale-[1.01]"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div>
+                            <code className="rounded-lg bg-white/10 px-3 py-1 font-mono text-sm font-bold text-secondary tracking-wider">
+                              {c.couponCode}
+                            </code>
+                            <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${
+                              c.isUsed
+                                ? "bg-rose-500/10 text-rose-300"
+                                : "bg-emerald-500/10 text-emerald-300"
+                            }`}>
+                              {c.isUsed ? "Đã dùng" : "Còn hiệu lực"}
+                            </span>
+                          </div>
+                          <span className="material-symbols-outlined text-2xl text-secondary">redeem</span>
+                        </div>
+
+                        <div className="text-2xl font-bold text-secondary mb-2">
+                          {c.discountType === "Fixed"
+                            ? `${c.discountValue.toLocaleString("vi-VN")}đ`
+                            : `${c.discountValue}%`}
+                          {c.maxDiscountAmount && c.discountType === "Percentage" && (
+                            <span className="text-xs font-normal text-on-surface-variant ml-1">
+                              (tối đa {c.maxDiscountAmount.toLocaleString("vi-VN")}đ)
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex justify-between text-xs text-on-surface-variant">
+                          <span>
+                            Phạm vi: {c.scope === "All" ? "Toàn bộ" : c.scope === "Tickets" ? "Vé" : "Bắp nước"}
+                          </span>
+                          <span>
+                            HSD: {new Date(c.expiresAt).toLocaleDateString("vi-VN")}
+                          </span>
+                        </div>
+
+                        {!c.isUsed && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(c.couponCode).catch(() => {})
+                            }}
+                            className="mt-3 w-full rounded-lg border border-secondary/30 py-2 text-xs font-bold text-secondary transition-colors hover:bg-secondary/10"
+                          >
+                            Sao chép mã
+                          </button>
+                        )}
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* -------------------- TAB 4: ĐỔI MẬT KHẨU -------------------- */}
             {activeTab === "password" && (
               <div className="space-y-8 animate-fadeIn">
                 <div>

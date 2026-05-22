@@ -28,4 +28,8 @@ public static class MaxLengthConsts
     public const int GatewayTransactionId = 256;
     public const int PaymentUrl = 2048;
     public const int GatewayResponseRaw = 8000;
+
+    // === Coupon ===
+    public const int CouponCode = 64;
+    public const int CouponDescription = 512;
 }

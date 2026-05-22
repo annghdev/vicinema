@@ -31,5 +31,11 @@ public class LoyaltyTierConfigurationConfiguration : IEntityTypeConfiguration<Lo
             .IsRequired();
         builder.Property(x => x.Description).HasMaxLength(MaxLengthConsts.Description);
         builder.Property(x => x.IsActive).IsRequired();
+
+        builder.Property(x => x.CouponTemplateId).IsRequired(false);
+        builder.HasOne(x => x.CouponTemplate)
+            .WithMany()
+            .HasForeignKey(x => x.CouponTemplateId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

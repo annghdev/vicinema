@@ -22,6 +22,11 @@ public class CreateBookingCommand : ICommand
     public string PaymentMethod { get; set; } = string.Empty;
     public string ReturnUrl { get; set; } = string.Empty;
     public string IpAddress { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Optional coupon code to apply to this booking.
+    /// </summary>
+    public string? CouponCode { get; set; }
 }
 
 /// <summary>
@@ -134,6 +139,7 @@ public class CreateBookingHandler(
 
         // 5b. Calculate loyalty discount server-side using all registered strategies.
         decimal discountAmount = 0m;
+        decimal couponDiscountAmount = 0m;
         if (customer.IsRegistered)
         {
             var activeTiers = await uow.LoyaltyTiers.GetActiveTiersAsync(ct);
@@ -141,7 +147,13 @@ public class CreateBookingHandler(
             discountAmount = aggregator.CalculateTotalDiscount(booking, customer, activeTiers);
         }
 
-        booking.UpdateFinalAmount(discountAmount);
+        // 5c. Apply coupon if provided.
+        if (!string.IsNullOrWhiteSpace(command.CouponCode))
+        {
+            couponDiscountAmount = await ApplyCouponAndGetDiscountAsync(command.CouponCode, customer, booking, ct);
+        }
+
+        booking.UpdateFinalAmount(discountAmount, couponDiscountAmount);
         uow.Bookings.Add(booking);
 
         // 6. Initiate payment via selected gateway (before commit).
@@ -208,6 +220,91 @@ public class CreateBookingHandler(
             SessionId = command.CustomerSessionId,
             IsRegistered = false
         };
+    }
+
+    private async Task<decimal> ApplyCouponAndGetDiscountAsync(
+        string couponCode,
+        Customer? customer,
+        Booking booking,
+        CancellationToken ct)
+    {
+        var code = couponCode.Trim().ToUpperInvariant();
+        var now = DateTimeOffset.UtcNow;
+        CustomerCoupon? customerCoupon = null;
+        CouponTemplate? template = null;
+
+        // Try personal coupon first
+        if (customer?.IsRegistered == true)
+        {
+            customerCoupon = await uow.CustomerCoupons.GetByCustomerAndCodeAsync(customer.Id, code, ct);
+        }
+
+        if (customerCoupon is not null)
+        {
+            customerCoupon.ValidateAvailable(now);
+        }
+        else
+        {
+            template = await uow.CouponTemplates.GetByCodeAsync(code, ct);
+            if (template is null)
+                throw new InvalidOperationException("Mã giảm giá không hợp lệ.");
+
+            template.ValidateAvailable(now);
+        }
+
+        var discountType = customerCoupon?.DiscountType ?? template!.DiscountType;
+        var discountValue = customerCoupon?.DiscountValue ?? template!.DiscountValue;
+        var maxDiscountAmount = customerCoupon?.MaxDiscountAmount ?? template!.MaxDiscountAmount;
+        var scope = customerCoupon?.Scope ?? template!.Scope;
+
+        decimal qualifyingAmount = scope switch
+        {
+            DiscountScope.All => booking.OriginAmount,
+            DiscountScope.Tickets => booking.Tickets.Sum(t => t.Ticket?.Price ?? 0m),
+            DiscountScope.Concessions => booking.Concessions.Sum(c => (c.Concession?.Price ?? 0m) * c.Quantity),
+            _ => booking.OriginAmount
+        };
+
+        decimal discount;
+        if (discountType == DiscountType.Fixed)
+        {
+            discount = Math.Min(discountValue, qualifyingAmount);
+        }
+        else
+        {
+            discount = qualifyingAmount * discountValue / 100m;
+            if (maxDiscountAmount.HasValue)
+                discount = Math.Min(discount, maxDiscountAmount.Value);
+        }
+
+        discount = Math.Round(discount, 2);
+
+        // Apply coupon to booking (domain logic + raise event)
+        booking.ApplyCoupon(code, discount);
+
+        // Persist coupon usage
+        if (customerCoupon is not null)
+        {
+            customerCoupon.MarkUsed(now);
+            uow.CustomerCoupons.Update(customerCoupon);
+        }
+
+        // If it's a public template, increment global usage
+        if (template is not null)
+        {
+            template.IncrementUsage();
+            uow.CouponTemplates.Update(template);
+
+            // Create a CustomerCoupon record to track per-user usage
+            var usageRecord = CustomerCoupon.RedeemPublic(customer?.Id ?? Guid.Empty, template, now);
+
+            // Mark as used immediately to prevent re-use by the same customer
+            usageRecord.MarkUsed(now);
+
+            uow.CustomerCoupons.Add(usageRecord);
+        }
+
+        return discount;
     }
 }
 

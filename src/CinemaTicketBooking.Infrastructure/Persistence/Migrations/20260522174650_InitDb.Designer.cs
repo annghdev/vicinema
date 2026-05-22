@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260521124033_AddLoyaltyTierSupport")]
-    partial class AddLoyaltyTierSupport
+    [Migration("20260522174650_InitDb")]
+    partial class InitDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -29,6 +29,16 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("CouponCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<decimal>("CouponDiscountAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -246,6 +256,92 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                     b.ToTable("concessions", (string)null);
                 });
 
+            modelBuilder.Entity("CinemaTicketBooking.Domain.CouponTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("DiscountType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("DurationDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(30);
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal?>("MaxDiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("MaxUsageCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxUsagePerUser")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<int>("TotalUsedCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("coupon_templates", (string)null);
+                });
+
             modelBuilder.Entity("CinemaTicketBooking.Domain.Customer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -279,7 +375,7 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)")
-                        .HasDefaultValue("Dong");
+                        .HasDefaultValue("Bronze");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -314,6 +410,90 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                     b.ToTable("customers", (string)null);
                 });
 
+            modelBuilder.Entity("CinemaTicketBooking.Domain.CustomerCoupon", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CouponCode")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid?>("CouponTemplateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DiscountType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("IssuedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("MaxDiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("MaxUsage")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("UsageCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("CustomerId", "CouponCode")
+                        .IsUnique();
+
+                    b.ToTable("customer_coupons", (string)null);
+                });
+
             modelBuilder.Entity("CinemaTicketBooking.Domain.LoyaltyTierConfiguration", b =>
                 {
                     b.Property<Guid>("Id")
@@ -321,6 +501,9 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
 
                     b.Property<decimal>("ConcessionDiscountPercent")
                         .HasColumnType("decimal(5,2)");
+
+                    b.Property<Guid?>("CouponTemplateId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -373,6 +556,8 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                         .HasColumnName("xmin");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CouponTemplateId");
 
                     b.HasIndex("Tier")
                         .IsUnique();
@@ -1315,6 +1500,16 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Ticket");
+                });
+
+            modelBuilder.Entity("CinemaTicketBooking.Domain.LoyaltyTierConfiguration", b =>
+                {
+                    b.HasOne("CinemaTicketBooking.Domain.CouponTemplate", "CouponTemplate")
+                        .WithMany()
+                        .HasForeignKey("CouponTemplateId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CouponTemplate");
                 });
 
             modelBuilder.Entity("CinemaTicketBooking.Domain.PaymentTransaction", b =>

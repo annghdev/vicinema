@@ -32,6 +32,16 @@ public class Booking : AggregateRoot
     public string? QrCode { get; set; }
     public BookingStatus Status { get; set; }
 
+    /// <summary>
+    /// Coupon code applied to this booking (null if none).
+    /// </summary>
+    public string? CouponCode { get; set; }
+
+    /// <summary>
+    /// Discount amount contributed by the coupon (part of the total discount).
+    /// </summary>
+    public decimal CouponDiscountAmount { get; set; }
+
     // =============================================================
     // Factory and data mutation
     // =============================================================
@@ -248,20 +258,58 @@ public class Booking : AggregateRoot
     }
 
     // =============================================================
+    // Coupon
+    // =============================================================
+
+    /// <summary>
+    /// Applies a coupon discount to the booking.
+    /// Records the coupon code and discount amount.
+    /// Does NOT modify FinalAmount — call <see cref="UpdateFinalAmount"/> after this.
+    /// </summary>
+    public void ApplyCoupon(string couponCode, decimal discountAmount)
+    {
+        if (string.IsNullOrWhiteSpace(couponCode))
+            throw new ArgumentException("Coupon code cannot be empty.", nameof(couponCode));
+
+        if (discountAmount < 0)
+            throw new ArgumentException("Coupon discount amount cannot be negative.", nameof(discountAmount));
+
+        CouponCode = couponCode;
+        CouponDiscountAmount = discountAmount;
+
+        RaiseEvent(new CouponApplied(
+            BookingId: Id,
+            CustomerId: CustomerId,
+            CustomerCouponId: null,
+            CouponCode: couponCode,
+            DiscountAmount: discountAmount));
+    }
+
+    // =============================================================
     // Pricing: Apply discount to calculate final amount
     // =============================================================
 
     /// <summary>
-    /// Calculates the final amount after applying a discount.
-    /// FinalAmount = max(0, OriginAmount - discountAmount).
+    /// Calculates the final amount after applying loyalty and coupon discounts.
+    /// FinalAmount = max(0, OriginAmount - loyaltyDiscount - couponDiscount).
+    /// </summary>
+    public void UpdateFinalAmount(decimal loyaltyDiscount, decimal couponDiscount)
+    {
+        if (loyaltyDiscount < 0)
+            throw new ArgumentException("Loyalty discount cannot be negative.", nameof(loyaltyDiscount));
+        if (couponDiscount < 0)
+            throw new ArgumentException("Coupon discount cannot be negative.", nameof(couponDiscount));
+
+        CouponDiscountAmount = couponDiscount;
+        FinalAmount = Math.Max(0, OriginAmount - loyaltyDiscount - couponDiscount);
+    }
+
+    /// <summary>
+    /// Legacy overload for backward compatibility (loyalty-only discount).
     /// </summary>
     public void UpdateFinalAmount(decimal discountAmount)
     {
-        if (discountAmount < 0)
-        {
-            throw new ArgumentException("Discount amount cannot be negative.", nameof(discountAmount));
-        }
-        FinalAmount = Math.Max(0, OriginAmount - discountAmount);
+        UpdateFinalAmount(discountAmount, CouponDiscountAmount);
     }
 }
 
