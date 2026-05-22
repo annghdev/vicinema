@@ -221,4 +221,97 @@ public class BookingTests
         var act = () => booking.UpdateFinalAmount(-1);
         act.Should().Throw<ArgumentException>();
     }
+
+    // =============================================
+    // Coupon-related tests
+    // =============================================
+
+    [Fact]
+    public void ApplyCoupon_Should_SetCouponCodeAndDiscount()
+    {
+        var booking = DomainTestBuilders.PendingBooking(Guid.CreateVersion7(), DomainTestBuilders.GuestCustomer());
+        booking.OriginAmount = 200_000m;
+
+        booking.ApplyCoupon("KOL50K", 50_000m);
+
+        booking.CouponCode.Should().Be("KOL50K");
+        booking.CouponDiscountAmount.Should().Be(50_000m);
+    }
+
+    [Fact]
+    public void ApplyCoupon_Should_Throw_When_CodeEmpty()
+    {
+        var booking = DomainTestBuilders.PendingBooking(Guid.CreateVersion7(), DomainTestBuilders.GuestCustomer());
+        var act = () => booking.ApplyCoupon("", 10_000m);
+        act.Should().Throw<ArgumentException>().WithParameterName("couponCode");
+    }
+
+    [Fact]
+    public void ApplyCoupon_Should_Throw_When_DiscountNegative()
+    {
+        var booking = DomainTestBuilders.PendingBooking(Guid.CreateVersion7(), DomainTestBuilders.GuestCustomer());
+        var act = () => booking.ApplyCoupon("TEST", -1m);
+        act.Should().Throw<ArgumentException>().WithParameterName("discountAmount");
+    }
+
+    [Fact]
+    public void ApplyCoupon_Should_Raise_CouponAppliedEvent()
+    {
+        var customerId = Guid.CreateVersion7();
+        var booking = DomainTestBuilders.PendingBooking(Guid.CreateVersion7(), DomainTestBuilders.GuestCustomer());
+        booking.CustomerId = customerId;
+        booking.OriginAmount = 200_000m;
+
+        booking.ApplyCoupon("KOL50K", 50_000m);
+
+        booking.Events.Should().ContainSingle(e => e is CouponApplied);
+        var ev = (CouponApplied)booking.Events.First(e => e is CouponApplied);
+        ev.CouponCode.Should().Be("KOL50K");
+        ev.DiscountAmount.Should().Be(50_000m);
+        ev.BookingId.Should().Be(booking.Id);
+    }
+
+    [Fact]
+    public void UpdateFinalAmount_WithTwoOverloads_Should_BothReduceCorrectly()
+    {
+        var booking = DomainTestBuilders.PendingBooking(Guid.CreateVersion7(), DomainTestBuilders.GuestCustomer());
+        booking.OriginAmount = 280_000m;
+
+        // Apply coupon first (simulates real flow)
+        booking.ApplyCoupon("VICINEMA10", 28_000m);
+        booking.UpdateFinalAmount(22_000m, 28_000m);
+
+        booking.FinalAmount.Should().Be(230_000m); // 280k - 22k - 28k
+    }
+
+    [Fact]
+    public void UpdateFinalAmount_LegacyOverload_Should_UseCouponDiscountAmount()
+    {
+        var booking = DomainTestBuilders.PendingBooking(Guid.CreateVersion7(), DomainTestBuilders.GuestCustomer());
+        booking.OriginAmount = 200_000m;
+        booking.CouponDiscountAmount = 30_000m;
+
+        booking.UpdateFinalAmount(20_000m); // legacy overload
+
+        booking.FinalAmount.Should().Be(150_000m); // 200k - 20k - 30k
+    }
+
+    [Fact]
+    public void UpdateFinalAmount_Should_Throw_When_CouponDiscountNegative()
+    {
+        var booking = DomainTestBuilders.PendingBooking(Guid.CreateVersion7(), DomainTestBuilders.GuestCustomer());
+        var act = () => booking.UpdateFinalAmount(0m, -1m);
+        act.Should().Throw<ArgumentException>().WithParameterName("couponDiscount");
+    }
+
+    [Fact]
+    public void CouponAndLoyaltyDiscount_Should_Stack_UpToZero()
+    {
+        var booking = DomainTestBuilders.PendingBooking(Guid.CreateVersion7(), DomainTestBuilders.GuestCustomer());
+        booking.OriginAmount = 100_000m;
+
+        booking.UpdateFinalAmount(80_000m, 80_000m); // total discount 160k > origin 100k
+
+        booking.FinalAmount.Should().Be(0m);
+    }
 }
