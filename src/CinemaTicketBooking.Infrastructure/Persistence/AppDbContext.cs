@@ -26,6 +26,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Slide> Slides => Set<Slide>();
+    public DbSet<LoyaltyTierConfiguration> LoyaltyTierConfigurations => Set<LoyaltyTierConfiguration>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
