@@ -1,5 +1,6 @@
 using CinemaTicketBooking.Domain;
 using CinemaTicketBooking.Domain.Repositories;
+using CinemaTicketBooking.Domain.Services;
 using CinemaTicketBooking.Infrastructure.Persistence.Repositories;
 using CinemaTicketBooking.Application.Features;
 using CinemaTicketBooking.Application.Abstractions;
@@ -63,6 +64,9 @@ public static class DependencyInjection
         services.AddScoped<ITicketRepository, TicketRepository>();
         services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
         services.AddScoped<ISlideRepository, SlideRepository>();
+        services.AddScoped<ILoyaltyTierConfigurationRepository, LoyaltyTierConfigurationRepository>();
+        services.AddScoped<ILoyaltyDiscountService, LoyaltyDiscountService>();
+        services.AddScoped<IDiscountStrategy, LoyaltyTierDiscountStrategy>();
         services.AddScoped<IQueryService, QueryService>();
         services.AddScoped<IUnitOfWork, EFUnitOfWork>();
         services.AddScoped<DataSeeder>();

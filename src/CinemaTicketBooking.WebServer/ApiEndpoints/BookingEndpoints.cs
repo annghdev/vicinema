@@ -20,6 +20,7 @@ public static class BookingEndpoints
             .RequireRateLimiting("fixed").WithTags("Bookings");
         group.MapGet("/{bookingId:guid}", GetBookingById);
         group.MapGet("/history/{customerId:guid}", GetBookingsByCustomerId);
+        group.MapPost("/preview-pricing", PreviewPricing);
         group.MapPost("/", CreateBooking);
         group.MapPut("/{id:guid}/checkin", CheckInBooking);
         group.MapPut("/{id:guid}/cancel", CancelBooking);
@@ -62,6 +63,15 @@ public static class BookingEndpoints
         query.CorrelationId = http.TraceIdentifier;
         var result = await bus.InvokeAsync<PagedResult<BookingMinimalInfoDto>>(query, ct);
         return Results.Ok(result);
+    }
+
+    private static async Task<IResult> PreviewPricing(
+        PreviewPricingQuery query,
+        IMessageBus bus,
+        CancellationToken ct)
+    {
+        var response = await bus.InvokeAsync<PreviewPricingResponse>(query, ct);
+        return Results.Ok(response);
     }
 
     private static async Task<IResult> CreateBooking(

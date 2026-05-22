@@ -39,6 +39,10 @@ public static class Permissions
     public const string CustomersView = "customers.view";
     public const string CustomersManage = "customers.manage";
 
+    // === Loyalty ===
+    public const string LoyaltyView = "loyalty.view";
+    public const string LoyaltyManage = "loyalty.manage";
+
     // === Reports & Analysis ===
     public const string ReportsView = "reports.view";
     public const string AnalysisView = "analysis.view";

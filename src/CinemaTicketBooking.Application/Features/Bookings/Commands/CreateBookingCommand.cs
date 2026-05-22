@@ -1,3 +1,4 @@
+using CinemaTicketBooking.Domain.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -16,7 +17,6 @@ public class CreateBookingCommand : ICommand
     public string CustomerName { get; set; } = string.Empty;
     public string CustomerPhoneNumber { get; set; } = string.Empty;
     public string CustomerEmail { get; set; } = string.Empty;
-    public decimal DiscountAmount { get; set; }
     public List<CheckoutConcessionSelection> Concessions { get; set; } = [];
     public string CorrelationId { get; set; } = string.Empty;
     public string PaymentMethod { get; set; } = string.Empty;
@@ -32,7 +32,8 @@ public class CreateBookingHandler(
     ITicketLocker locker,
     IOptions<TicketLockingOptions> options,
     IPaymentServiceFactory paymentServiceFactory,
-    IUserContext userContext)
+    IUserContext userContext,
+    IEnumerable<IDiscountStrategy> discountStrategies)
 {
     /// <summary>
     /// Re-validates selection, creates booking, initiates payment, and persists everything atomically.
@@ -131,7 +132,16 @@ public class CreateBookingHandler(
             }
         }
 
-        booking.UpdateFinalAmount(command.DiscountAmount);
+        // 5b. Calculate loyalty discount server-side using all registered strategies.
+        decimal discountAmount = 0m;
+        if (customer.IsRegistered)
+        {
+            var activeTiers = await uow.LoyaltyTiers.GetActiveTiersAsync(ct);
+            var aggregator = new DiscountStrategyComposite(discountStrategies);
+            discountAmount = aggregator.CalculateTotalDiscount(booking, customer, activeTiers);
+        }
+
+        booking.UpdateFinalAmount(discountAmount);
         uow.Bookings.Add(booking);
 
         // 6. Initiate payment via selected gateway (before commit).
@@ -235,10 +245,6 @@ public class CreateBookingValidator : AbstractValidator<CreateBookingCommand>
         RuleFor(x => x.SelectedTicketIds)
             .NotEmpty()
             .WithMessage("Selected ticket IDs are required.");
-
-        RuleFor(x => x.DiscountAmount)
-            .GreaterThanOrEqualTo(0)
-            .WithMessage("Discount amount cannot be negative.");
 
         RuleFor(x => x.PaymentMethod)
             .NotEmpty()

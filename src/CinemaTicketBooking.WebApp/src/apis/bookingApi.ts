@@ -7,6 +7,8 @@ import {
   type BookingDetailsDto,
   type BookingHistoryItemDto,
   type GetBookingHistoryRequest,
+  type PreviewPricingRequest,
+  type PreviewPricingResponse,
   normalizeResponse,
 } from "../types/Booking"
 import { type PagedResult } from "../types/Common"
@@ -32,7 +34,6 @@ export async function createBooking(body: CreateBookingRequest): Promise<CreateB
     customerPhoneNumber: body.customerPhoneNumber,
     selectedTicketIds: body.selectedTicketIds,
     concessions: body.concessions,
-    discountAmount: body.discountAmount,
     paymentMethod: body.paymentMethod,
     returnUrl: body.returnUrl,
     ipAddress: body.ipAddress,
@@ -73,6 +74,19 @@ export async function getBookingHistory(
       pageSize: request.pageSize ?? 10,
       date: request.date,
     },
+  })
+  return response.data
+}
+
+export async function previewPricing(body: PreviewPricingRequest): Promise<PreviewPricingResponse> {
+  const response = await httpClient.post<PreviewPricingResponse>("/api/bookings/preview-pricing", {
+    showTimeId: body.showTimeId,
+    customerSessionId: body.customerSessionId,
+    customerName: body.customerName,
+    customerEmail: body.customerEmail,
+    customerPhoneNumber: body.customerPhoneNumber,
+    selectedTicketIds: body.selectedTicketIds,
+    concessions: body.concessions,
   })
   return response.data
 }

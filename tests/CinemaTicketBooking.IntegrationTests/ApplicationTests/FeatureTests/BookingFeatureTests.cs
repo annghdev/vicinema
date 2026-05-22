@@ -84,7 +84,6 @@ public sealed class BookingFeatureTests(PostgresContainerFixture databaseFixture
                 seed.TicketsBySeatCode["A2"]
             ],
             Concessions = [new CheckoutConcessionSelection(concessionId, 2)],
-            DiscountAmount = 10_000m,
             PaymentMethod = "None",
             ReturnUrl = "https://localhost/checkout/return",
             IpAddress = "127.0.0.1",
@@ -359,7 +358,6 @@ public sealed class BookingFeatureTests(PostgresContainerFixture databaseFixture
             CustomerEmail = "retry.blocked@example.com",
             SelectedTicketIds = [seed.TicketsBySeatCode["A1"]],
             Concessions = [],
-            DiscountAmount = 0,
             PaymentMethod = "None",
             ReturnUrl = "https://localhost/checkout/return",
             IpAddress = "127.0.0.1",
@@ -395,7 +393,6 @@ public sealed class BookingFeatureTests(PostgresContainerFixture databaseFixture
             CustomerEmail = "retry.switch@example.com",
             SelectedTicketIds = [seed.TicketsBySeatCode["A1"]],
             Concessions = [],
-            DiscountAmount = 0,
             PaymentMethod = "None",
             ReturnUrl = "https://localhost/checkout/return",
             IpAddress = "127.0.0.1",
@@ -441,7 +438,6 @@ public sealed class BookingFeatureTests(PostgresContainerFixture databaseFixture
             CustomerEmail = "cancel.booking@example.com",
             SelectedTicketIds = [seed.TicketsBySeatCode["A1"], seed.TicketsBySeatCode["A2"]],
             Concessions = [],
-            DiscountAmount = 0,
             PaymentMethod = "None",
             ReturnUrl = "https://localhost/checkout/return",
             IpAddress = "127.0.0.1",
@@ -507,7 +503,6 @@ public sealed class BookingFeatureTests(PostgresContainerFixture databaseFixture
         result.ShowTimeInfo.Screen.Should().Be("READ-SCR-1");
         result.ShowTimeInfo.Movie.Should().Be("Read Query Movie");
         result.OriginalAmount.Should().Be(370_000m);
-        result.DiscountAmount.Should().Be(20_000m);
         result.FinalAmount.Should().Be(350_000m);
         result.CheckinQrCode.Should().Be("qr://booking/read");
         result.Tickets.Should().HaveCount(2);
@@ -597,7 +592,6 @@ public sealed class BookingFeatureTests(PostgresContainerFixture databaseFixture
             CustomerEmail = "verify.payment.it@example.com",
             SelectedTicketIds = [seed.TicketsBySeatCode["A1"]],
             Concessions = [],
-            DiscountAmount = 0,
             PaymentMethod = "None",
             ReturnUrl = "https://localhost/checkout/return",
             IpAddress = "127.0.0.1",

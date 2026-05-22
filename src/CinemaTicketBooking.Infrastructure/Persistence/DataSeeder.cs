@@ -92,6 +92,82 @@ public class DataSeeder(
             await dbContext.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Seeded slide data successfully.");
         }
+
+        // 3. Ensure Loyalty Tier Configurations exist.
+        if (!await dbContext.LoyaltyTierConfigurations.AnyAsync(cancellationToken))
+        {
+            var tiers = SeedLoyaltyTiers();
+            dbContext.LoyaltyTierConfigurations.AddRange(tiers);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            logger.LogInformation("Seeded loyalty tier configurations successfully.");
+        }
+    }
+
+    // =============================================
+    // Loyalty Tier Seeding
+    // =============================================
+
+    /// <summary>
+    /// Seeds the 6 default loyalty tier configurations.
+    /// </summary>
+    private static List<LoyaltyTierConfiguration> SeedLoyaltyTiers()
+    {
+        return
+        [
+            LoyaltyTierConfiguration.Create(
+                tier: LoyaltyTier.Bronze,
+                name: "Đồng",
+                minPoints: 0,
+                maxPoints: 100,
+                ticketDiscountPercent: 0m,
+                concessionDiscountPercent: 10m,
+                description: "Giảm 10% bắp nước"),
+
+            LoyaltyTierConfiguration.Create(
+                tier: LoyaltyTier.Silver,
+                name: "Bạc",
+                minPoints: 101,
+                maxPoints: 500,
+                ticketDiscountPercent: 5m,
+                concessionDiscountPercent: 15m,
+                description: "Giảm 15% bắp nước, giảm 5% vé"),
+
+            LoyaltyTierConfiguration.Create(
+                tier: LoyaltyTier.Gold,
+                name: "Vàng",
+                minPoints: 501,
+                maxPoints: 1500,
+                ticketDiscountPercent: 10m,
+                concessionDiscountPercent: 20m,
+                description: "Giảm 20% bắp nước, giảm 10% vé"),
+
+            LoyaltyTierConfiguration.Create(
+                tier: LoyaltyTier.Platinum,
+                name: "Bạch Kim",
+                minPoints: 1501,
+                maxPoints: 5000,
+                ticketDiscountPercent: 15m,
+                concessionDiscountPercent: 25m,
+                description: "Giảm 25% bắp nước, giảm 15% vé"),
+
+            LoyaltyTierConfiguration.Create(
+                tier: LoyaltyTier.Diamond,
+                name: "Kim Cương",
+                minPoints: 5001,
+                maxPoints: 15000,
+                ticketDiscountPercent: 20m,
+                concessionDiscountPercent: 35m,
+                description: "Giảm 35% bắp nước, giảm 20% vé"),
+
+            LoyaltyTierConfiguration.Create(
+                tier: LoyaltyTier.Ruby,
+                name: "Ruby",
+                minPoints: 15001,
+                maxPoints: null,
+                ticketDiscountPercent: 30m,
+                concessionDiscountPercent: 50m,
+                description: "Giảm 50% bắp nước, giảm 30% vé")
+        ];
     }
 
     private static List<Cinema> SeedCinemas()

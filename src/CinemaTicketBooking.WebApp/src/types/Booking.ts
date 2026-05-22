@@ -8,7 +8,6 @@ export type CreateBookingRequest = {
   customerPhoneNumber: string
   selectedTicketIds: string[]
   concessions: { concessionId: string; quantity: number }[]
-  discountAmount: number
   paymentMethod: string
   returnUrl: string
   ipAddress: string
@@ -58,6 +57,29 @@ export type RetryPaymentRequest = {
   returnUrl: string
   ipAddress: string
   replacePendingPayment?: boolean
+}
+
+export type PreviewPricingRequest = {
+  showTimeId: string
+  customerSessionId: string
+  customerName: string
+  customerEmail: string
+  customerPhoneNumber: string
+  selectedTicketIds: string[]
+  concessions: { concessionId: string; quantity: number }[]
+}
+
+export type PreviewPricingResponse = {
+  originAmount: number
+  ticketDiscount: number
+  concessionDiscount: number
+  totalDiscount: number
+  finalAmount: number
+  isRegisteredCustomer: boolean
+  loyaltyTierName: string | null
+  loyaltyTierDescription: string | null
+  ticketDiscountPercent: number | null
+  concessionDiscountPercent: number | null
 }
 
 export type BookingDetailsDto = {
