@@ -31,6 +31,13 @@ public class LoyaltyTierConfiguration : AggregateRoot
     /// <summary>Whether this tier configuration is active.</summary>
     public bool IsActive { get; set; } = true;
 
+    /// <summary>
+    /// Optional reference to a <see cref="CouponTemplate"/> of Personal type.
+    /// When a customer upgrades to this tier, a personal coupon will be issued from this template.
+    /// </summary>
+    public Guid? CouponTemplateId { get; set; }
+    public CouponTemplate? CouponTemplate { get; set; }
+
     // =============================================================
     // Factory
     // =============================================================
@@ -87,7 +94,8 @@ public class LoyaltyTierConfiguration : AggregateRoot
         decimal ticketDiscountPercent,
         decimal concessionDiscountPercent,
         string description,
-        bool isActive)
+        bool isActive,
+        Guid? couponTemplateId = null)
     {
         if (ticketDiscountPercent < 0 || ticketDiscountPercent > 100)
             throw new ArgumentException("Ticket discount percent must be between 0 and 100.", nameof(ticketDiscountPercent));
@@ -108,6 +116,7 @@ public class LoyaltyTierConfiguration : AggregateRoot
         ConcessionDiscountPercent = concessionDiscountPercent;
         Description = description;
         IsActive = isActive;
+        CouponTemplateId = couponTemplateId;
 
         RaiseEvent(new LoyaltyTierConfigurationUpdated(Id, Tier));
     }
