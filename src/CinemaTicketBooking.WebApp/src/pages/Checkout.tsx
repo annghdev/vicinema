@@ -276,7 +276,6 @@ function Checkout() {
           concessionId: l.concession.id,
           quantity: l.quantity,
         })),
-        discountAmount: 0,
         paymentMethod: selectedPaymentMethod,
         returnUrl,
         ipAddress: "127.0.0.1",

@@ -2,7 +2,9 @@ import { isAxiosError } from "axios"
 import { useEffect, useMemo, useState } from "react"
 import { getBookingHistory } from "../apis/bookingApi"
 import { changePassword } from "../apis/authApi"
+import { getCustomerLoyalty, getActiveTiers } from "../apis/loyaltyApi"
 import { type BookingHistoryItemDto } from "../types/Booking"
+import { type CustomerLoyaltyDto, type LoyaltyTierDto, TIER_LABELS, TIER_COLORS, TIER_NUMBER_MAP, TIER_ICONS } from "../types/Loyalty"
 import { useAuth } from "../contexts/AuthContext"
 import { useToast } from "../contexts/ToastContext"
 
@@ -74,6 +76,11 @@ function Profile() {
   // Tabs navigation
   const [activeTab, setActiveTab] = useState<"info" | "benefits" | "password" | "history">("info")
 
+  // Loyalty data from API
+  const [loyaltyLoading, setLoyaltyLoading] = useState(true)
+  const [customerLoyalty, setCustomerLoyalty] = useState<CustomerLoyaltyDto | null>(null)
+  const [tiers, setTiers] = useState<LoyaltyTierDto[]>([])
+
   // Additional faked information persistent states
   const [dob, setDob] = useState("")
   const [gender, setGender] = useState("")
@@ -101,6 +108,42 @@ function Profile() {
       }
     }
   }, [customerId, phoneNumber])
+
+  // Load loyalty data from API
+  useEffect(() => {
+    if (!isAuthenticated || !customerId) return
+
+    let disposed = false
+    async function loadLoyalty() {
+      setLoyaltyLoading(true)
+      try {
+        const [myLoyalty, activeTiers] = await Promise.all([
+          getCustomerLoyalty(),
+          getActiveTiers(),
+        ])
+        if (disposed) return
+        setCustomerLoyalty(myLoyalty)
+        setTiers(activeTiers)
+      } catch {
+        // Loyalty fetch failure is non-critical
+      } finally {
+        if (!disposed) setLoyaltyLoading(false)
+      }
+    }
+    void loadLoyalty()
+    return () => { disposed = true }
+  }, [isAuthenticated, customerId])
+
+  // Compute progress percentage and next tier info
+  const progressPercent = useMemo(() => {
+    if (!customerLoyalty || !customerLoyalty.pointsToNextTier) return 100
+    const currentMin = tiers.find(t => t.tier === customerLoyalty.currentTier)?.minPoints ?? 0
+    const nextMin = customerLoyalty.pointsToNextTier + customerLoyalty.accumulatedPoints
+    const range = nextMin - currentMin
+    if (range <= 0) return 100
+    const progress = ((customerLoyalty.accumulatedPoints - currentMin) / range) * 100
+    return Math.min(100, Math.max(0, progress))
+  }, [customerLoyalty, tiers])
 
   // Save additional faked information
   const handleSaveAdditionalInfo = () => {
@@ -248,15 +291,21 @@ function Profile() {
               alt={displayName ?? "Avatar"}
               className="h-24 w-24 rounded-full border-2 border-primary/30 object-cover shadow-lg shadow-black/30 md:h-28 md:w-28"
             />
-            <div className="absolute bottom-0 right-0 rounded-full bg-primary p-2 text-on-primary shadow-lg">
-              <span className="material-symbols-outlined text-sm font-bold">verified_user</span>
+            <div className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary p-1 text-on-primary shadow-lg md:h-9 md:w-9 md:p-1.5">
+              <span className="material-symbols-outlined text-base font-bold md:text-lg">verified_user</span>
             </div>
           </div>
           <div className="flex-1">
             <h1 className="font-headline text-3xl font-black text-on-surface md:text-4xl">
               <span className="text-secondary drop-shadow-[0_0_8px_rgba(97,180,254,0.4)]">{displayName}</span>
             </h1>
-            <p className="text-sm text-on-surface-variant mt-1">Khách hàng thành viên • Bạc (Silver)</p>
+            <p className="text-sm text-on-surface-variant mt-1">
+              {loyaltyLoading
+                ? "Đang tải thông tin hội viên..."
+                : customerLoyalty && customerLoyalty.currentTier
+                  ? `Khách hàng thành viên • ${TIER_LABELS[customerLoyalty.currentTier]}`
+                  : "Khách hàng thành viên"}
+            </p>
 
             <div className="mt-4 flex flex-wrap gap-4 justify-center md:justify-start text-sm">
               <div className="flex items-center gap-2 rounded-xl bg-background/50 border border-outline-variant/10 px-4 py-2">
@@ -271,40 +320,58 @@ function Profile() {
           </div>
         </div>
 
-        {/* Progress Bar below Overview */}
-        <div className="border-t border-outline-variant/15 pt-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-secondary">insights</span>
-                <span className="font-headline font-bold text-on-surface">Tích lũy cấp bậc hội viên</span>
+        {/* Progress Bar below Overview - Loyalty (API-driven) */}
+        {customerLoyalty && !loyaltyLoading && (
+          <div className="border-t border-outline-variant/15 pt-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-secondary">insights</span>
+                  <span className="font-headline font-bold text-on-surface">Tích lũy cấp bậc hội viên</span>
+                </div>
+                <span className="font-mono font-bold text-secondary text-base">
+                  {customerLoyalty.accumulatedPoints.toLocaleString("vi-VN")}
+                  {customerLoyalty.pointsToNextTier != null
+                    ? ` / ${(customerLoyalty.accumulatedPoints + customerLoyalty.pointsToNextTier).toLocaleString("vi-VN")} PTS`
+                    : " PTS"}
+                </span>
               </div>
-              <span className="font-mono font-bold text-secondary text-base">
-                1,250 / 2,000 PTS
-              </span>
-            </div>
 
-            {/* Progress Track */}
-            <div className="relative h-4 w-full overflow-hidden rounded-full border border-outline-variant/30 bg-background/60 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-primary via-secondary to-secondary shadow-[0_0_12px_rgba(0,244,254,0.6)] transition-all duration-1000 ease-out"
-                style={{ width: "62.5%" }}
-              />
-            </div>
-
-            {/* Left & Right Bounds showing discount */}
-            <div className="flex items-center justify-between text-xs md:text-sm font-semibold">
-              <div className="flex flex-col">
-                <span className="text-on-surface-variant">Bạc (Silver)</span>
-                <span className="text-primary font-bold">Giảm 2% vé</span>
+              {/* Progress Track */}
+              <div className="relative h-4 w-full overflow-hidden rounded-full border border-outline-variant/30 bg-background/60 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-primary via-secondary to-secondary shadow-[0_0_12px_rgba(0,244,254,0.6)] transition-all duration-1000 ease-out"
+                  style={{ width: `${progressPercent}%` }}
+                />
               </div>
-              <div className="flex flex-col text-right">
-                <span className="text-on-surface-variant">Vàng (Gold)</span>
-                <span className="text-secondary font-bold">Giảm 5% vé</span>
+
+              {/* Left & Right Bounds showing discount */}
+              <div className="flex items-center justify-between text-xs md:text-sm font-semibold">
+                <div className="flex flex-col">
+                  <span className="text-on-surface-variant">{TIER_LABELS[customerLoyalty.currentTier]}</span>
+                  <span className="text-primary font-bold">
+                    {customerLoyalty.ticketDiscountPercent > 0
+                      ? `Giảm ${customerLoyalty.ticketDiscountPercent}% vé`
+                      : "Giá vé gốc"}
+                  </span>
+                </div>
+                {customerLoyalty.nextTier && (
+                  <div className="flex flex-col text-right">
+                    <span className="text-on-surface-variant">{TIER_LABELS[customerLoyalty.nextTier]}</span>
+                    <span className="text-secondary font-bold">
+                      {(() => {
+                        const next = tiers.find(t => t.tier === customerLoyalty.nextTier)
+                        return next && next.ticketDiscountPercent > 0
+                          ? `Giảm ${next.ticketDiscountPercent}% vé`
+                          : "Phúc lợi cao hơn"
+                      })()}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        </div>
+        )}
 
       </section>
 
@@ -483,94 +550,62 @@ function Profile() {
                   </p>
                 </div>
 
-                <div className="grid gap-6 sm:grid-cols-2">
-                  {[
-                    {
-                      name: "Đồng (Bronze)",
-                      points: "0 - 999 PTS",
-                      discount: "Giảm 0% khi đặt vé",
-                      perks: ["Tích lũy điểm tiêu chuẩn x1.0", "Hỗ trợ đặt vé trực tuyến 24/7"],
-                      color: "from-amber-700/20 to-amber-900/10 border-amber-800/30",
-                      textColor: "text-amber-400",
-                      badge: "military_tech",
-                    },
-                    {
-                      name: "Bạc (Silver)",
-                      points: "1,000 - 1,999 PTS",
-                      discount: "Giảm 2% khi đặt vé",
-                      perks: ["Tích lũy điểm nâng cao x1.1", "Tặng Bắp ngọt sinh nhật miễn phí", "Ưu tiên nhận mã khuyến mãi"],
-                      color: "from-slate-600/20 to-slate-800/10 border-slate-600/30",
-                      textColor: "text-slate-300",
-                      badge: "military_tech",
-                      active: true, // currently simulated active
-                    },
-                    {
-                      name: "Vàng (Gold)",
-                      points: "2,000 - 4,999 PTS",
-                      discount: "Giảm 5% khi đặt vé",
-                      perks: [
-                        "Tích lũy điểm cao cấp x1.2",
-                        "Tặng Combo Bắp + Nước sinh nhật miễn phí",
-                        "Tặng 1 vé xem phim 2D/3D miễn phí hàng năm",
-                        "Quyền nhận vé xem trước họp báo phim mới",
-                      ],
-                      color: "from-yellow-600/20 to-yellow-800/10 border-yellow-600/30",
-                      textColor: "text-yellow-400",
-                      badge: "stars",
-                    },
-                    {
-                      name: "Kim cương (Diamond)",
-                      points: "5,000+ PTS",
-                      discount: "Giảm 10% khi đặt vé",
-                      perks: [
-                        "Tích lũy điểm tối đa x1.5",
-                        "Tặng VIP Combo sinh nhật miễn phí",
-                        "Tặng 2 vé xem phim VIP miễn phí hàng năm",
-                        "Quyền ưu tiên mua vé sớm cho các bom tấn hot",
-                        "Phục vụ tại quầy ưu tiên (Priority Lane)",
-                      ],
-                      color: "from-cyan-600/20 to-cyan-800/10 border-cyan-500/30",
-                      textColor: "text-cyan-400",
-                      badge: "diamond",
-                    },
-                  ].map((tier) => (
-                    <article
-                      key={tier.name}
-                      className={`relative overflow-hidden rounded-2xl border p-6 backdrop-blur-md bg-gradient-to-br transition-all hover:scale-[1.01] ${tier.color
-                        } ${tier.active ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
-                    >
-                      {tier.active && (
-                        <div className="absolute right-4 top-4 rounded-full bg-primary/20 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-primary border border-primary/30">
-                          Hạng của bạn
-                        </div>
-                      )}
+                {loyaltyLoading ? (
+                  <div className="flex min-h-[200px] items-center justify-center">
+                    <span className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  </div>
+                ) : (
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    {[...tiers].sort((a, b) => {
+                      const tierOrder = { Bronze: 0, Silver: 1, Gold: 2, Platinum: 3, Diamond: 4, Ruby: 5 }
+                      const keyA = typeof a.tier === "number" ? (TIER_NUMBER_MAP[a.tier] ?? "Bronze") : a.tier
+                      const keyB = typeof b.tier === "number" ? (TIER_NUMBER_MAP[b.tier] ?? "Bronze") : b.tier
+                      return (tierOrder[keyA] ?? 0) - (tierOrder[keyB] ?? 0)
+                    }).map((tier) => {
+                      const tierKey = typeof tier.tier === "number" ? (TIER_NUMBER_MAP[tier.tier] ?? "Bronze") : tier.tier
+                      const colors = TIER_COLORS[tierKey] ?? TIER_COLORS.Bronze
+                      const isMyTier = customerLoyalty?.currentTier === tierKey
+                      return (
+                        <article
+                          key={tier.id}
+                          className={`relative overflow-hidden rounded-2xl border p-6 backdrop-blur-md bg-gradient-to-br transition-all hover:scale-[1.01] ${colors.gradient
+                            } ${isMyTier ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
+                        >
+                          {isMyTier && (
+                            <div className="absolute right-4 top-4 rounded-full bg-primary/20 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-primary border border-primary/30">
+                              Hạng của bạn
+                            </div>
+                          )}
 
-                      <div className="flex items-center gap-3">
-                        <span className={`material-symbols-outlined text-3xl ${tier.textColor}`}>
-                          {tier.badge}
-                        </span>
-                        <div>
-                          <h4 className="font-headline text-lg font-black text-on-surface">{tier.name}</h4>
-                          <span className="text-xs font-bold text-on-surface-variant font-mono">{tier.points}</span>
-                        </div>
-                      </div>
+                          <div className="flex items-center gap-3">
+                            <span className={`material-symbols-outlined text-3xl ${colors.textColor}`}>
+                              {TIER_ICONS[tierKey]}
+                            </span>
+                            <div>
+                              <h4 className="font-headline text-lg font-black text-on-surface">{TIER_LABELS[tierKey]}</h4>
+                              <span className="text-xs font-bold text-on-surface-variant font-mono">
+                                {tier.minPoints.toLocaleString("vi-VN")}
+                                {tier.maxPoints != null ? ` - ${tier.maxPoints.toLocaleString("vi-VN")} PTS` : "+ PTS"}
+                              </span>
+                            </div>
+                          </div>
 
-                      <div className="mt-4 border-t border-outline-variant/15 pt-4">
-                        <div className={`text-sm font-bold ${tier.textColor} mb-3`}>
-                          {tier.discount}
-                        </div>
-                        <ul className="space-y-2 text-xs text-on-surface-variant">
-                          {tier.perks.map((perk, i) => (
-                            <li key={i} className="flex items-start gap-2">
-                              <span className="material-symbols-outlined text-sm mt-0.5 text-slate-400 shrink-0">check</span>
-                              <span>{perk}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </article>
-                  ))}
-                </div>
+                          <div className="mt-4 border-t border-outline-variant/15 pt-4">
+                            <div className={`text-sm font-bold ${colors.textColor} mb-3`}>
+                              {tier.ticketDiscountPercent > 0
+                                ? `Giảm ${tier.ticketDiscountPercent}% vé`
+                                : "Giá vé gốc"}
+                              {tier.concessionDiscountPercent > 0 && ` • Giảm ${tier.concessionDiscountPercent}% bắp nước`}
+                            </div>
+                            {tier.description && (
+                              <p className="text-xs text-on-surface-variant">{tier.description}</p>
+                            )}
+                          </div>
+                        </article>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )}
 

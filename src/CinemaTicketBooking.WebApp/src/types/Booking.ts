@@ -8,7 +8,6 @@ export type CreateBookingRequest = {
   customerPhoneNumber: string
   selectedTicketIds: string[]
   concessions: { concessionId: string; quantity: number }[]
-  discountAmount: number
   paymentMethod: string
   returnUrl: string
   ipAddress: string

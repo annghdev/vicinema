@@ -32,7 +32,6 @@ export async function createBooking(body: CreateBookingRequest): Promise<CreateB
     customerPhoneNumber: body.customerPhoneNumber,
     selectedTicketIds: body.selectedTicketIds,
     concessions: body.concessions,
-    discountAmount: body.discountAmount,
     paymentMethod: body.paymentMethod,
     returnUrl: body.returnUrl,
     ipAddress: body.ipAddress,
