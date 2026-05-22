@@ -89,6 +89,64 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "coupon_templates",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Code = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    Type = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    DiscountType = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    DiscountValue = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    MaxDiscountAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
+                    Scope = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    MaxUsageCount = table.Column<int>(type: "integer", nullable: false),
+                    MaxUsagePerUser = table.Column<int>(type: "integer", nullable: false),
+                    DurationDays = table.Column<int>(type: "integer", nullable: false, defaultValue: 30),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    Description = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
+                    TotalUsedCount = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_coupon_templates", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "customer_coupons",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    CustomerId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CouponTemplateId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CouponCode = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    DiscountType = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    DiscountValue = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    MaxDiscountAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
+                    Scope = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    UsageCount = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    MaxUsage = table.Column<int>(type: "integer", nullable: false, defaultValue: 1),
+                    IssuedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UsedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    ExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_customer_coupons", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "customers",
                 columns: table => new
                 {
@@ -98,6 +156,8 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                     PhoneNumber = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
                     IsRegistered = table.Column<bool>(type: "boolean", nullable: false),
+                    LoyaltyTier = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false, defaultValue: "Bronze"),
+                    AccumulatedPoints = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -362,6 +422,38 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "loyalty_tier_configurations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Tier = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    Name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    MinPoints = table.Column<int>(type: "integer", nullable: false),
+                    MaxPoints = table.Column<int>(type: "integer", nullable: true),
+                    TicketDiscountPercent = table.Column<decimal>(type: "numeric(5,2)", nullable: false),
+                    ConcessionDiscountPercent = table.Column<decimal>(type: "numeric(5,2)", nullable: false),
+                    Description = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CouponTemplateId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_loyalty_tier_configurations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_loyalty_tier_configurations_coupon_templates_CouponTemplate~",
+                        column: x => x.CouponTemplateId,
+                        principalTable: "coupon_templates",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "account_roles",
                 columns: table => new
                 {
@@ -480,6 +572,8 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                     FinalAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     QrCode = table.Column<string>(type: "character varying(2048)", maxLength: 2048, nullable: true),
                     Status = table.Column<int>(type: "integer", nullable: false),
+                    CouponCode = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    CouponDiscountAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -675,6 +769,34 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                 column: "ShowTimeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_coupon_templates_Code",
+                table: "coupon_templates",
+                column: "Code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_customer_coupons_CustomerId",
+                table: "customer_coupons",
+                column: "CustomerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_customer_coupons_CustomerId_CouponCode",
+                table: "customer_coupons",
+                columns: new[] { "CustomerId", "CouponCode" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_loyalty_tier_configurations_CouponTemplateId",
+                table: "loyalty_tier_configurations",
+                column: "CouponTemplateId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_loyalty_tier_configurations_Tier",
+                table: "loyalty_tier_configurations",
+                column: "Tier",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_payment_transactions_BookingId",
                 table: "payment_transactions",
                 column: "BookingId");
@@ -769,6 +891,12 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                 name: "booking_tickets");
 
             migrationBuilder.DropTable(
+                name: "customer_coupons");
+
+            migrationBuilder.DropTable(
+                name: "loyalty_tier_configurations");
+
+            migrationBuilder.DropTable(
                 name: "payment_transactions");
 
             migrationBuilder.DropTable(
@@ -794,6 +922,9 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "tickets");
+
+            migrationBuilder.DropTable(
+                name: "coupon_templates");
 
             migrationBuilder.DropTable(
                 name: "bookings");

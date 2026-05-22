@@ -53,6 +53,21 @@ public class DataSeeder(
     public static readonly Guid BookingId5 = new("00000000-0000-0000-0000-000000070005");
 
 
+    // =============================================
+    // Coupon Seeding — Fixed IDs
+    // =============================================
+    public static readonly Guid CouponTemplateId1 = new("00000000-0000-0000-0000-000000080001");
+    public static readonly Guid CouponTemplateId2 = new("00000000-0000-0000-0000-000000080002");
+    public static readonly Guid CouponTemplateId3 = new("00000000-0000-0000-0000-000000080003");
+    public static readonly Guid CouponTemplateId4 = new("00000000-0000-0000-0000-000000080004");
+    public static readonly Guid CouponTemplateId5 = new("00000000-0000-0000-0000-000000080005");
+    public static readonly Guid CouponTemplateId6 = new("00000000-0000-0000-0000-000000080006");
+    public static readonly Guid CouponTemplateId7 = new("00000000-0000-0000-0000-000000080007");
+
+    public static readonly Guid CustomerCouponId1 = new("00000000-0000-0000-0000-000000090001");
+    public static readonly Guid CustomerCouponId2 = new("00000000-0000-0000-0000-000000090002");
+
+
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
         // 1. Seed root catalogs if they don't exist.
@@ -93,13 +108,31 @@ public class DataSeeder(
             logger.LogInformation("Seeded slide data successfully.");
         }
 
-        // 3. Ensure Loyalty Tier Configurations exist.
+        // 3. Ensure coupon templates exist (must come before loyalty tiers that reference them).
+        if (!await dbContext.CouponTemplates.AnyAsync(cancellationToken))
+        {
+            var templates = SeedCouponTemplates();
+            dbContext.CouponTemplates.AddRange(templates);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            logger.LogInformation("Seeded coupon templates successfully.");
+        }
+
+        // 4. Ensure Loyalty Tier Configurations exist.
         if (!await dbContext.LoyaltyTierConfigurations.AnyAsync(cancellationToken))
         {
             var tiers = SeedLoyaltyTiers();
             dbContext.LoyaltyTierConfigurations.AddRange(tiers);
             await dbContext.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Seeded loyalty tier configurations successfully.");
+        }
+
+        // 5. Ensure customer coupons exist (sample personal coupons for test accounts).
+        if (!await dbContext.CustomerCoupons.AnyAsync(cancellationToken))
+        {
+            var customerCoupons = SeedCustomerCoupons();
+            dbContext.CustomerCoupons.AddRange(customerCoupons);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            logger.LogInformation("Seeded customer coupons successfully.");
         }
     }
 
@@ -112,62 +145,214 @@ public class DataSeeder(
     /// </summary>
     private static List<LoyaltyTierConfiguration> SeedLoyaltyTiers()
     {
-        return
-        [
-            LoyaltyTierConfiguration.Create(
-                tier: LoyaltyTier.Bronze,
-                name: "Đồng",
-                minPoints: 0,
-                maxPoints: 100,
-                ticketDiscountPercent: 0m,
-                concessionDiscountPercent: 10m,
-                description: "Giảm 10% bắp nước"),
+        var bronze = LoyaltyTierConfiguration.Create(
+            tier: LoyaltyTier.Bronze,
+            name: "Đồng",
+            minPoints: 0,
+            maxPoints: 100,
+            ticketDiscountPercent: 0m,
+            concessionDiscountPercent: 10m,
+            description: "Giảm 10% bắp nước");
 
-            LoyaltyTierConfiguration.Create(
-                tier: LoyaltyTier.Silver,
-                name: "Bạc",
-                minPoints: 101,
-                maxPoints: 500,
-                ticketDiscountPercent: 5m,
-                concessionDiscountPercent: 15m,
-                description: "Giảm 15% bắp nước, giảm 5% vé"),
+        var silver = LoyaltyTierConfiguration.Create(
+            tier: LoyaltyTier.Silver,
+            name: "Bạc",
+            minPoints: 101,
+            maxPoints: 500,
+            ticketDiscountPercent: 5m,
+            concessionDiscountPercent: 15m,
+            description: "Giảm 15% bắp nước, giảm 5% vé");
+        silver.Id = new Guid("00000000-0000-0000-0000-00000000000A");
+        silver.CouponTemplateId = CouponTemplateId7;
 
-            LoyaltyTierConfiguration.Create(
-                tier: LoyaltyTier.Gold,
-                name: "Vàng",
-                minPoints: 501,
-                maxPoints: 1500,
-                ticketDiscountPercent: 10m,
-                concessionDiscountPercent: 20m,
-                description: "Giảm 20% bắp nước, giảm 10% vé"),
+        var gold = LoyaltyTierConfiguration.Create(
+            tier: LoyaltyTier.Gold,
+            name: "Vàng",
+            minPoints: 501,
+            maxPoints: 1500,
+            ticketDiscountPercent: 10m,
+            concessionDiscountPercent: 20m,
+            description: "Giảm 20% bắp nước, giảm 10% vé");
+        gold.Id = new Guid("00000000-0000-0000-0000-00000000000B");
+        gold.CouponTemplateId = CouponTemplateId6;
 
-            LoyaltyTierConfiguration.Create(
-                tier: LoyaltyTier.Platinum,
-                name: "Bạch Kim",
-                minPoints: 1501,
-                maxPoints: 5000,
-                ticketDiscountPercent: 15m,
-                concessionDiscountPercent: 25m,
-                description: "Giảm 25% bắp nước, giảm 15% vé"),
+        var platinum = LoyaltyTierConfiguration.Create(
+            tier: LoyaltyTier.Platinum,
+            name: "Bạch Kim",
+            minPoints: 1501,
+            maxPoints: 5000,
+            ticketDiscountPercent: 15m,
+            concessionDiscountPercent: 25m,
+            description: "Giảm 25% bắp nước, giảm 15% vé");
+        platinum.Id = new Guid("00000000-0000-0000-0000-00000000000C");
+        platinum.CouponTemplateId = CouponTemplateId5;
 
-            LoyaltyTierConfiguration.Create(
-                tier: LoyaltyTier.Diamond,
-                name: "Kim Cương",
-                minPoints: 5001,
-                maxPoints: 15000,
-                ticketDiscountPercent: 20m,
-                concessionDiscountPercent: 35m,
-                description: "Giảm 35% bắp nước, giảm 20% vé"),
+        var diamond = LoyaltyTierConfiguration.Create(
+            tier: LoyaltyTier.Diamond,
+            name: "Kim Cương",
+            minPoints: 5001,
+            maxPoints: 15000,
+            ticketDiscountPercent: 20m,
+            concessionDiscountPercent: 35m,
+            description: "Giảm 35% bắp nước, giảm 20% vé");
+        diamond.Id = new Guid("00000000-0000-0000-0000-00000000000D");
+        diamond.CouponTemplateId = CouponTemplateId4;
 
-            LoyaltyTierConfiguration.Create(
-                tier: LoyaltyTier.Ruby,
-                name: "Ruby",
-                minPoints: 15001,
-                maxPoints: null,
-                ticketDiscountPercent: 30m,
-                concessionDiscountPercent: 50m,
-                description: "Giảm 50% bắp nước, giảm 30% vé")
-        ];
+        var ruby = LoyaltyTierConfiguration.Create(
+            tier: LoyaltyTier.Ruby,
+            name: "Ruby",
+            minPoints: 15001,
+            maxPoints: null,
+            ticketDiscountPercent: 30m,
+            concessionDiscountPercent: 50m,
+            description: "Giảm 50% bắp nước, giảm 30% vé");
+        ruby.Id = new Guid("00000000-0000-0000-0000-00000000000E");
+        ruby.CouponTemplateId = CouponTemplateId3;
+
+        return [bronze, silver, gold, platinum, diamond, ruby];
+    }
+
+    // =============================================
+    // Coupon Template Seeding
+    // =============================================
+
+    private static List<CouponTemplate> SeedCouponTemplates()
+    {
+        var t1 = CouponTemplate.Create(
+            code: "KOL50K",
+            type: CouponType.Public,
+            discountType: DiscountType.Fixed,
+            discountValue: 50000m,
+            maxDiscountAmount: null,
+            scope: DiscountScope.All,
+            maxUsageCount: 100,
+            maxUsagePerUser: 1,
+            durationDays: 180,
+            description: "Mã KOL — Giảm 50,000đ toàn bộ hóa đơn. Dùng chung, mỗi user 1 lần.",
+            isActive: true);
+        t1.Id = CouponTemplateId1;
+
+        var t2 = CouponTemplate.Create(
+            code: "VICINEMA10",
+            type: CouponType.Public,
+            discountType: DiscountType.Percentage,
+            discountValue: 10m,
+            maxDiscountAmount: 30000m,
+            scope: DiscountScope.All,
+            maxUsageCount: 200,
+            maxUsagePerUser: 1,
+            durationDays: 180,
+            description: "Giảm 10% toàn bộ hóa đơn (tối đa 30,000đ). Dùng chung.",
+            isActive: true);
+        t2.Id = CouponTemplateId2;
+
+        var t3 = CouponTemplate.Create(
+            code: "UPGRADE-RUBY",
+            type: CouponType.Personal,
+            discountType: DiscountType.Percentage,
+            discountValue: 20m,
+            maxDiscountAmount: 100000m,
+            scope: DiscountScope.All,
+            maxUsageCount: 0,
+            maxUsagePerUser: 1,
+            durationDays: 365,
+            description: "Tri ân hạng Ruby — Giảm 20% hóa đơn (tối đa 100,000đ). Dùng 1 lần.",
+            isActive: true);
+        t3.Id = CouponTemplateId3;
+
+        var t4 = CouponTemplate.Create(
+            code: "UPGRADE-DIAMOND",
+            type: CouponType.Personal,
+            discountType: DiscountType.Percentage,
+            discountValue: 15m,
+            maxDiscountAmount: 50000m,
+            scope: DiscountScope.All,
+            maxUsageCount: 0,
+            maxUsagePerUser: 1,
+            durationDays: 365,
+            description: "Tri ân hạng Kim Cương — Giảm 15% hóa đơn (tối đa 50,000đ). Dùng 1 lần.",
+            isActive: true);
+        t4.Id = CouponTemplateId4;
+
+        var t5 = CouponTemplate.Create(
+            code: "UPGRADE-PLATINUM",
+            type: CouponType.Personal,
+            discountType: DiscountType.Percentage,
+            discountValue: 15m,
+            maxDiscountAmount: 50000m,
+            scope: DiscountScope.All,
+            maxUsageCount: 0,
+            maxUsagePerUser: 1,
+            durationDays: 365,
+            description: "Tri ân hạng Kim Cương — Giảm 15% hóa đơn (tối đa 50,000đ). Dùng 1 lần.",
+            isActive: true);
+        t5.Id = CouponTemplateId5;
+
+        var t6 = CouponTemplate.Create(
+            code: "UPGRADE-GOLD",
+            type: CouponType.Personal,
+            discountType: DiscountType.Percentage,
+            discountValue: 15m,
+            maxDiscountAmount: 50000m,
+            scope: DiscountScope.All,
+            maxUsageCount: 0,
+            maxUsagePerUser: 1,
+            durationDays: 365,
+            description: "Tri ân hạng Kim Cương — Giảm 15% hóa đơn (tối đa 50,000đ). Dùng 1 lần.",
+            isActive: true);
+        t6.Id = CouponTemplateId6;
+
+            var t7 = CouponTemplate.Create(
+            code: "UPGRADE-SILVER",
+            type: CouponType.Personal,
+            discountType: DiscountType.Percentage,
+            discountValue: 15m,
+            maxDiscountAmount: 50000m,
+            scope: DiscountScope.All,
+            maxUsageCount: 0,
+            maxUsagePerUser: 1,
+            durationDays: 365,
+            description: "Tri ân hạng Kim Cương — Giảm 15% hóa đơn (tối đa 50,000đ). Dùng 1 lần.",
+            isActive: true);
+        t7.Id = CouponTemplateId7;
+
+        return [t1, t2, t3, t4, t5, t6, t7];
+    }   
+
+    // =============================================
+    // Customer Coupon Seeding
+    // =============================================
+
+    private static List<CustomerCoupon> SeedCustomerCoupons()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var sixMonthsLater = now.AddMonths(6);
+
+        // Personal coupon for CustomerId2 (Silver tier test account)
+        var cc1 = CustomerCoupon.CreatePersonal(
+            customerId: CustomerId2,
+            couponCode: "SILVER-THAN",
+            discountType: DiscountType.Fixed,
+            discountValue: 20000m,
+            maxDiscountAmount: null,
+            scope: DiscountScope.Concessions,
+            expiresAt: sixMonthsLater,
+            now: now);
+        cc1.Id = CustomerCouponId1;
+
+        // Personal coupon for CustomerId3 (Gold tier test account)
+        var cc2 = CustomerCoupon.CreatePersonal(
+            customerId: CustomerId3,
+            couponCode: "GOLD-WELCOME",
+            discountType: DiscountType.Fixed,
+            discountValue: 30000m,
+            maxDiscountAmount: null,
+            scope: DiscountScope.All,
+            expiresAt: sixMonthsLater,
+            now: now);
+        cc2.Id = CustomerCouponId2;
+
+        return [cc1, cc2];
     }
 
     private static List<Cinema> SeedCinemas()
