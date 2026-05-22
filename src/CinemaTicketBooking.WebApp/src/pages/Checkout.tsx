@@ -1,8 +1,8 @@
 import { isAxiosError } from "axios"
 import type { HubConnection } from "@microsoft/signalr"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom"
-import { cancelBooking, createBooking, retryPayment } from "../apis/bookingApi"
+import { cancelBooking, createBooking, previewPricing, retryPayment } from "../apis/bookingApi"
 import { getConcessions } from "../apis/concessionApi"
 import { connectPaymentHub } from "../apis/paymentRealtime"
 import { PaymentQRModal } from "../components/PaymentQRModal"
@@ -13,7 +13,7 @@ import { getOrCreateCustomerSessionId } from "../lib/customerSessionId"
 import { useAuth } from "../contexts/AuthContext"
 import { useToast } from "../contexts/ToastContext"
 import type { ShowTimeDetailDto, ShowTimeTicketDto } from "../types/ShowTime"
-import type { CreateBookingResponse } from "../types/Booking"
+import type { CreateBookingResponse, PreviewPricingResponse } from "../types/Booking"
 import type { ConcessionDto } from "../types/Concession"
 import { isRedirectBehavior, type PaymentConfirmedRealtimeEvent, type PaymentGatewayOptionDto, type VerifyPaymentResponse } from "../types/Payment"
 
@@ -224,6 +224,49 @@ function Checkout() {
   )
 
   const totalAmount = ticketsSubtotal + concessionSubtotal
+
+  // ═══════════════════════════════════════════════════════════
+  // Preview pricing — debounced call to server for discount display
+  // ═══════════════════════════════════════════════════════════
+  const [previewData, setPreviewData] = useState<PreviewPricingResponse | null>(null)
+  const previewTimerRef = useRef<ReturnType<typeof setTimeout>>()
+
+  useEffect(() => {
+    if (previewTimerRef.current) clearTimeout(previewTimerRef.current)
+    setPreviewData(null)
+
+    if (!showtimeId || selectedTicketIds.length === 0) {
+      return
+    }
+
+    previewTimerRef.current = setTimeout(() => {
+      const concessionsList = Object.entries(concessionQty)
+        .filter(([, qty]) => qty > 0)
+        .map(([id, qty]) => ({ concessionId: id, quantity: qty }))
+
+      previewPricing({
+        showTimeId: showtimeId,
+        customerSessionId: getOrCreateCustomerSessionId(),
+        customerName: customerName.trim() || "Guest",
+        customerEmail: customerEmail.trim() || "guest@example.com",
+        customerPhoneNumber: customerPhone.trim() || "0000000000",
+        selectedTicketIds: selectedTicketIds,
+        concessions: concessionsList,
+      })
+        .then(setPreviewData)
+        .catch(() => setPreviewData(null))
+    }, 600)
+
+    return () => {
+      if (previewTimerRef.current) clearTimeout(previewTimerRef.current)
+    }
+  }, [showtimeId, selectedTicketIds, concessionQty, customerName, customerEmail, customerPhone])
+
+  // Derive the amounts to display (preview values if available, otherwise origin).
+  const displayOriginAmount = previewData?.originAmount ?? totalAmount
+  const displayFinalAmount = previewData?.finalAmount ?? totalAmount
+  const displayTotalDiscount = previewData?.totalDiscount ?? 0
+  const hasDiscount = previewData?.isRegisteredCustomer === true && displayTotalDiscount > 0
 
   const setQty = useCallback((concessionId: string, next: number) => {
     setConcessionQty((prev) => {
@@ -700,10 +743,48 @@ function Checkout() {
               </div>
             ))}
           </div>
+          {hasDiscount && previewData && (
+            <div className="mt-3 space-y-1 border-t border-secondary/20 pt-3 text-sm">
+              <div className="flex items-center justify-between text-secondary">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <span className="material-symbols-outlined text-base">loyalty</span>
+                  Giảm giá thành viên
+                </span>
+                <span className="font-semibold text-red-400">
+                  −{formatCurrency(displayTotalDiscount)}
+                </span>
+              </div>
+              {previewData.loyaltyTierName && (
+                <div className="flex items-center justify-between text-[11px] text-on-surface-variant/70">
+                  <span>
+                    {previewData.loyaltyTierName}
+                    {previewData.ticketDiscountPercent != null && previewData.ticketDiscountPercent > 0
+                      ? ` – giảm ${previewData.ticketDiscountPercent}% vé`
+                      : ""}
+                    {previewData.concessionDiscountPercent != null && previewData.concessionDiscountPercent > 0
+                      ? ` + ${previewData.concessionDiscountPercent}% đồ uống`
+                      : ""}
+                  </span>
+                  {previewData.loyaltyTierDescription && (
+                    <span title={previewData.loyaltyTierDescription} className="cursor-help underline decoration-dotted">
+                      ⓘ
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           {submitError && <div className="mt-4 rounded border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{submitError}</div>}
           <div className="mt-6 flex items-end justify-between border-t border-outline-variant/20 pt-4">
             <span className="font-headline text-lg text-on-surface-variant">Tổng cộng</span>
-            <span className="font-headline text-3xl font-bold text-secondary">{formatCurrency(totalAmount)}</span>
+            <span className="font-headline text-3xl font-bold text-secondary">
+              {formatCurrency(displayFinalAmount)}
+              {hasDiscount && (
+                <span className="ml-2 text-xs font-normal text-on-surface-variant/60 line-through">
+                  {formatCurrency(displayOriginAmount)}
+                </span>
+              )}
+            </span>
           </div>
           <button
             type="button"
@@ -721,7 +802,7 @@ function Checkout() {
             ) : (
               <span className="material-symbols-outlined">lock</span>
             )}
-            {postBooking ? "Đã tạo đơn" : `Thanh toán ${formatCurrency(totalAmount)}`}
+            {postBooking ? "Đã tạo đơn" : `Thanh toán ${formatCurrency(displayFinalAmount)}`}
           </button>
         </div>
       </aside>
