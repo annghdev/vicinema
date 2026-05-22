@@ -11,6 +11,7 @@ export type CreateBookingRequest = {
   paymentMethod: string
   returnUrl: string
   ipAddress: string
+  couponCode?: string
 }
 
 export type CreateBookingResponse = {
@@ -67,6 +68,7 @@ export type PreviewPricingRequest = {
   customerPhoneNumber: string
   selectedTicketIds: string[]
   concessions: { concessionId: string; quantity: number }[]
+  couponCode?: string
 }
 
 export type PreviewPricingResponse = {
@@ -80,33 +82,7 @@ export type PreviewPricingResponse = {
   loyaltyTierDescription: string | null
   ticketDiscountPercent: number | null
   concessionDiscountPercent: number | null
-}
-
-export type BookingDetailsDto = {
-  bookingId: string
-  showTimeId: string
-  showTimeInfo: { screen: string; movie: string; startAt: string; endAt: string }
-  originalAmount: number
-  discountAmount: number
-  finalAmount: number
-  checkinQrCode: string
-  status: number | string
-  createdAt: string
-  tickets: { seatCode: string; price: number }[]
-  ticketIds: string[]
-  concessions: { name: string; imageUrl: string; price: number; quantity: number; amount: number }[]
-}
-
-export type BookingHistoryItemDto = {
-  bookingId: string
-  showTimeInfo: { screen: string; movie: string; startAt: string; endAt: string }
-  finalAmount: number
-  createdAt: string
-  status: number | string
-}
-
-export type GetBookingHistoryRequest = {
-  pageNumber?: number
-  pageSize?: number
-  date?: string
+  couponDiscountAmount: number
+  couponCode: string | null
+  couponDescription: string | null
 }
