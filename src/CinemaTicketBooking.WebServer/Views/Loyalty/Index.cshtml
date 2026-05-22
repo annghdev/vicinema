@@ -1,0 +1,255 @@
+@using CinemaTicketBooking.Application.Features.Loyalty
+@using CinemaTicketBooking.Domain
+@using CinemaTicketBooking.Application.Common.Auth
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthorizationService
+@model IReadOnlyList<LoyaltyTierDto>
+
+@{
+    Layout = "_Layout";
+    var canManage = (await AuthorizationService.AuthorizeAsync(User, Permissions.LoyaltyManage)).Succeeded;
+}
+
+<div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <!-- Header -->
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <h2 class="font-headline text-2xl font-bold text-on-surface flex items-center gap-3">
+            <span class="material-symbols-outlined text-secondary drop-shadow-[0_0_8px_rgba(0,244,254,0.3)]">award_star</span>
+            Quản lý hạng hội viên
+        </h2>
+    </div>
+
+    <!-- Tier Cards -->
+    <div class="grid gap-6">
+        @foreach (var tier in Model)
+        {
+            <div class="group relative overflow-hidden rounded-3xl border border-white/5 bg-surface-container-low/40 p-8 backdrop-blur-xl transition-all hover:border-white/10 hover:bg-surface-container-low/60 shadow-2xl" data-tier='@Json.Serialize(tier)'>
+                <!-- Status & Title -->
+                <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            @{
+                                var (badgeBg, badgeText) = GetTierColors(tier.Tier);
+                            }
+                            <span class="rounded-full @badgeBg @badgeText border border-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest">@tier.Tier</span>
+                            <h2 class="font-headline text-2xl font-bold text-on-surface">@tier.Name</h2>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-3 h-11 px-2">
+                            <label class="relative inline-flex cursor-pointer items-center">
+                                <input type="checkbox" class="peer sr-only" @(tier.IsActive ? "checked" : "") 
+                                       onchange="toggleTierStatus(this, this.checked)" @(canManage ? "" : "disabled") />
+                                <div class="peer h-6 w-11 rounded-full bg-white/10 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-slate-500 after:transition-all peer-checked:bg-secondary/30 peer-checked:after:translate-x-full peer-checked:after:bg-secondary"></div>
+                            </label>
+                            <span class="text-[10px] font-bold uppercase tracking-widest @(tier.IsActive ? "text-secondary" : "text-slate-500")">
+                                @(tier.IsActive ? "Hoạt động" : "Tạm tắt")
+                            </span>
+                        </div>
+
+                        @if (canManage)
+                        {
+                            <button onclick='openEditTierModal(@Json.Serialize(tier))' 
+                                    class="w-11 h-11 aspect-square flex items-center justify-center rounded-2xl bg-white/5 text-slate-400 hover:text-primary hover:bg-primary/10 transition-all">
+                                <span class="material-symbols-outlined text-xl">settings</span>
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8 border-b border-white/5 pb-8">
+                    <div class="space-y-1">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Điểm tối thiểu</p>
+                        <p class="text-2xl font-black text-on-surface">@tier.MinPoints.ToString("N0")</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Điểm tối đa</p>
+                        <p class="text-2xl font-black text-on-surface">@(tier.MaxPoints?.ToString("N0") ?? "∞")</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Giảm vé</p>
+                        <p class="text-2xl font-black text-on-surface">@tier.TicketDiscountPercent%</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Giảm bắp nước</p>
+                        <p class="text-2xl font-black text-on-surface">@tier.ConcessionDiscountPercent%</p>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="flex items-start gap-3">
+                    <span class="material-symbols-outlined text-slate-500 mt-0.5 text-lg">description</span>
+                    <p class="text-sm text-slate-400">@tier.Description</p>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Info Alert -->
+    <div class="flex items-start gap-4 rounded-2xl border border-secondary/20 bg-secondary/5 p-4 text-secondary/80 backdrop-blur-md mt-12">
+        <span class="material-symbols-outlined mt-0.5">info</span>
+        <div class="text-sm">
+            <p class="font-bold uppercase tracking-widest text-[10px] mb-1">Hướng dẫn</p>
+            <p>Hội viên tích lũy điểm từ mỗi giao dịch đặt vé thành công (1.000 VNĐ = 1 điểm). 
+               Mỗi hạng được xác định bởi khoảng điểm và mức giảm giá tương ứng. 
+               Bạn có thể điều chỉnh ngưỡng điểm và % giảm giá cho từng hạng tại đây.
+            </p>
+        </div>
+    </div>
+</div>
+
+@functions {
+    (string bg, string text) GetTierColors(LoyaltyTier tier) => tier switch
+    {
+        LoyaltyTier.Bronze => ("bg-amber-500/10 border-amber-500/20", "text-amber-400"),
+        LoyaltyTier.Silver => ("bg-slate-400/10 border-slate-400/20", "text-slate-300"),
+        LoyaltyTier.Gold => ("bg-yellow-500/10 border-yellow-500/20", "text-yellow-400"),
+        LoyaltyTier.Platinum => ("bg-purple-500/10 border-purple-500/20", "text-purple-400"),
+        LoyaltyTier.Diamond => ("bg-cyan-500/10 border-cyan-500/20", "text-cyan-400"),
+        LoyaltyTier.Ruby => ("bg-red-500/10 border-red-500/20", "text-red-400"),
+        _ => ("bg-white/10 border-white/20", "text-slate-400")
+    };
+}
+
+<!-- Modal: Edit Tier -->
+<div id="editTierModal" class="fixed inset-0 z-[100] hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="closeEditTierModal()"></div>
+    <div class="absolute left-1/2 top-1/2 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 animate-in zoom-in-95 duration-200">
+        <div class="overflow-hidden rounded-3xl border border-white/10 bg-surface-container-highest shadow-2xl">
+            <div class="bg-gradient-to-r from-primary/20 to-transparent px-8 py-6 border-b border-white/5">
+                <h3 class="font-headline text-xl font-bold text-on-surface">CHỈNH SỬA HẠNG HỘI VIÊN</h3>
+                <p class="text-xs text-on-surface-variant mt-1">Cập nhật ngưỡng điểm và mức giảm giá cho hạng này.</p>
+            </div>
+            
+            <form id="editTierForm" class="p-8 space-y-6">
+                <input type="hidden" id="editTierId" />
+                
+                <div class="md:col-span-2">
+                    <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Tên hạng</label>
+                    <input type="text" id="editName" required class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" placeholder="Tên hiển thị của hạng" />
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Điểm tối thiểu</label>
+                        <input type="number" id="editMinPoints" min="0" required class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" />
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Điểm tối đa (để trống nếu không giới hạn)</label>
+                        <input type="number" id="editMaxPoints" min="0" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Giảm vé (%)</label>
+                        <input type="number" id="editTicketPercent" min="0" max="100" step="0.1" required class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" />
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Giảm bắp nước (%)</label>
+                        <input type="number" id="editConcessionPercent" min="0" max="100" step="0.1" required class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Mô tả</label>
+                    <input type="text" id="editDescription" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" placeholder="Mô tả ngắn về hạng này" />
+                </div>
+
+                <div class="flex items-center gap-6 pt-4 border-t border-white/5">
+                    <label class="flex items-center gap-3 cursor-pointer group relative">
+                        <input type="checkbox" id="editIsActive" class="peer hidden" checked />
+                        <div class="w-10 h-5 bg-white/10 rounded-full border border-white/10 peer-checked:bg-secondary/20 peer-checked:border-secondary/40 transition-all"></div>
+                        <div class="absolute left-1 top-1 w-3 h-3 bg-slate-500 rounded-full transition-all peer-checked:left-6 peer-checked:bg-secondary shadow-sm"></div>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest ml-12">Kích hoạt</span>
+                    </label>
+                </div>
+
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeEditTierModal()" class="flex-1 py-3 rounded-xl border border-white/10 font-headline text-xs font-bold uppercase tracking-widest text-slate-400 hover:bg-white/5 transition-all">Hủy</button>
+                    <button type="submit" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-primary-container font-headline text-xs font-bold uppercase tracking-widest text-on-primary shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const modal = document.getElementById('editTierModal');
+        const form = document.getElementById('editTierForm');
+
+        function openEditTierModal(tier) {
+            document.getElementById('editTierId').value = tier.id;
+            document.getElementById('editName').value = tier.name;
+            document.getElementById('editMinPoints').value = tier.minPoints;
+            document.getElementById('editMaxPoints').value = tier.maxPoints ?? '';
+            document.getElementById('editTicketPercent').value = tier.ticketDiscountPercent;
+            document.getElementById('editConcessionPercent').value = tier.concessionDiscountPercent;
+            document.getElementById('editDescription').value = tier.description;
+            document.getElementById('editIsActive').checked = tier.isActive;
+            modal.classList.remove('hidden');
+        }
+
+        function closeEditTierModal() {
+            modal.classList.add('hidden');
+        }
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                id: document.getElementById('editTierId').value,
+                name: document.getElementById('editName').value,
+                minPoints: parseInt(document.getElementById('editMinPoints').value) || 0,
+                maxPoints: (function(){ const v = document.getElementById('editMaxPoints').value; return v ? parseInt(v) : null; })(),
+                ticketDiscountPercent: parseFloat(document.getElementById('editTicketPercent').value) || 0,
+                concessionDiscountPercent: parseFloat(document.getElementById('editConcessionPercent').value) || 0,
+                description: document.getElementById('editDescription').value,
+                isActive: document.getElementById('editIsActive').checked
+            };
+
+            try {
+                const resp = await fetch('/Loyalty/Update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await resp.json();
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (err) {
+                showToast('Đã có lỗi xảy ra!', 'error');
+            }
+        };
+
+        async function toggleTierStatus(checkbox, isActive) {
+            const card = checkbox.closest('.group');
+            if (!card) return;
+            try {
+                const tierData = JSON.parse(card.getAttribute('data-tier'));
+                tierData.isActive = isActive;
+                const resp = await fetch('/Loyalty/Update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(tierData)
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (err) {
+                showToast('Không thể cập nhật trạng thái!', 'error');
+            }
+        }
+    </script>
+}

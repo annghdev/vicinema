@@ -145,6 +145,7 @@ app.MapCinemaEndpoints();
 app.MapMovieEndpoints();
 app.MapSlideEndpoints();
 app.MapConcessionEndpoints();
+app.MapLoyaltyEndpoints();
 app.MapScreenEndpoints();
 app.MapPaymentEndpoints();
 app.MapTestEndpoints();
