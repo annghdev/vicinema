@@ -17,6 +17,8 @@ public class Customer : AggregateRoot
     public string PhoneNumber { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public bool IsRegistered { get; set; }
+    public DateTimeOffset? DateOfBirth { get; set; }
+    public string? Gender { get; set; }
 
     /// <summary>Current loyalty tier. Defaults to Dong for new registered customers.</summary>
     public LoyaltyTier LoyaltyTier { get; set; } = LoyaltyTier.Bronze;

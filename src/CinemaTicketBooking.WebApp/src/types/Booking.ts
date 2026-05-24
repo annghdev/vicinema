@@ -1,4 +1,5 @@
 import { type PaymentRedirectBehavior } from "./Payment"
+import type { AppliedPromotionDto, FreeConcessionItemDto } from "./Promotion"
 
 export type CreateBookingRequest = {
   showTimeId: string
@@ -24,6 +25,9 @@ export type CreateBookingResponse = {
   redirectBehavior: PaymentRedirectBehavior | null
   paymentTransactionId: string | null
   gatewayTransactionId: string | null
+  promotionDiscountAmount: number
+  appliedPromotions: AppliedPromotionDto[]
+  freeItems: FreeConcessionItemDto[]
 }
 
 export type CreateBookingResponseRaw = {
@@ -36,6 +40,9 @@ export type CreateBookingResponseRaw = {
   redirectBehavior: PaymentRedirectBehavior | null
   paymentTransactionId: string | null
   gatewayTransactionId: string | null
+  appliedPromotions: AppliedPromotionDto[]
+  freeItems: FreeConcessionItemDto[]
+  promotionDiscountAmount: number
 }
 
 export function normalizeResponse(r: CreateBookingResponseRaw): CreateBookingResponse {
@@ -49,6 +56,9 @@ export function normalizeResponse(r: CreateBookingResponseRaw): CreateBookingRes
     redirectBehavior: r.redirectBehavior,
     paymentTransactionId: r.paymentTransactionId,
     gatewayTransactionId: r.gatewayTransactionId,
+    appliedPromotions: r.appliedPromotions ?? [],
+    freeItems: r.freeItems ?? [],
+    promotionDiscountAmount: r.promotionDiscountAmount ?? 0,
   }
 }
 
@@ -85,4 +95,7 @@ export type PreviewPricingResponse = {
   couponDiscountAmount: number
   couponCode: string | null
   couponDescription: string | null
+  promotionDiscountAmount: number
+  appliedPromotions: AppliedPromotionDto[]
+  freeItems: FreeConcessionItemDto[]
 }

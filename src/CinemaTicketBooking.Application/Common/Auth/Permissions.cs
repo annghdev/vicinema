@@ -47,6 +47,12 @@ public static class Permissions
     public const string CouponsView = "coupons.view";
     public const string CouponsManage = "coupons.manage";
 
+    // === Promotions ===
+    public const string PromotionsView = "promotions.view";
+    public const string PromotionsCreate = "promotions.create";
+    public const string PromotionsEdit = "promotions.edit";
+    public const string PromotionsDelete = "promotions.delete";
+
     // === Reports & Analysis ===
     public const string ReportsView = "reports.view";
     public const string AnalysisView = "analysis.view";

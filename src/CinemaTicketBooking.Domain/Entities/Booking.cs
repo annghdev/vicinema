@@ -29,6 +29,7 @@ public class Booking : AggregateRoot
     public decimal FinalAmount { get; set; }
     public List<BookingTicket> Tickets { get; set; } = [];
     public List<BookingConcession> Concessions { get; set; } = [];
+    public List<BookingPromotion> AppliedPromotions { get; private set; } = [];
     public string? QrCode { get; set; }
     public BookingStatus Status { get; set; }
 
@@ -257,6 +258,19 @@ public class Booking : AggregateRoot
             FinalAmount: FinalAmount));
     }
 
+    /// <summary>
+    /// Total discount from all applied promotions.
+    /// </summary>
+    public decimal TotalPromotionDiscount => AppliedPromotions.Sum(p => p.DiscountAmount);
+
+    /// <summary>
+    /// Applies a promotion to the booking.
+    /// </summary>
+    public void ApplyPromotion(BookingPromotion promotion)
+    {
+        AppliedPromotions.Add(promotion);
+    }
+
     // =============================================================
     // Coupon
     // =============================================================
@@ -290,18 +304,28 @@ public class Booking : AggregateRoot
     // =============================================================
 
     /// <summary>
-    /// Calculates the final amount after applying loyalty and coupon discounts.
-    /// FinalAmount = max(0, OriginAmount - loyaltyDiscount - couponDiscount).
+    /// Calculates the final amount after applying loyalty, coupon, and promotion discounts.
+    /// FinalAmount = max(0, OriginAmount - loyaltyDiscount - couponDiscount - promotionDiscount).
     /// </summary>
-    public void UpdateFinalAmount(decimal loyaltyDiscount, decimal couponDiscount)
+    public void UpdateFinalAmount(decimal loyaltyDiscount, decimal couponDiscount, decimal promotionDiscount)
     {
         if (loyaltyDiscount < 0)
             throw new ArgumentException("Loyalty discount cannot be negative.", nameof(loyaltyDiscount));
         if (couponDiscount < 0)
             throw new ArgumentException("Coupon discount cannot be negative.", nameof(couponDiscount));
+        if (promotionDiscount < 0)
+            throw new ArgumentException("Promotion discount cannot be negative.", nameof(promotionDiscount));
 
         CouponDiscountAmount = couponDiscount;
-        FinalAmount = Math.Max(0, OriginAmount - loyaltyDiscount - couponDiscount);
+        FinalAmount = Math.Max(0, OriginAmount - loyaltyDiscount - couponDiscount - promotionDiscount);
+    }
+
+    /// <summary>
+    /// Calculates the final amount after applying loyalty and coupon discounts.
+    /// </summary>
+    public void UpdateFinalAmount(decimal loyaltyDiscount, decimal couponDiscount)
+    {
+        UpdateFinalAmount(loyaltyDiscount, couponDiscount, 0);
     }
 
     /// <summary>
@@ -334,6 +358,25 @@ public class BookingConcession : IEntity
     public Guid ConcessionId { get; set; }
     public Concession? Concession { get; set; }
     public int Quantity { get; set; }
+    public bool IsFree { get; private set; } = false;
+
+    public void MarkAsFree()
+    {
+        IsFree = true;
+    }
+
+    public static BookingConcession Create(Guid bookingId, Guid concessionId, int quantity, bool isFree = false)
+    {
+        var item = new BookingConcession
+        {
+            Id = Guid.CreateVersion7(),
+            BookingId = bookingId,
+            ConcessionId = concessionId,
+            Quantity = quantity,
+            IsFree = isFree,
+        };
+        return item;
+    }
 }
 
 //public enum BookingStatus

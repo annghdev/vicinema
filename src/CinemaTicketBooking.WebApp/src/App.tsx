@@ -11,6 +11,8 @@ import PaymentResult from "./pages/PaymentResult"
 import RetryPayment from "./pages/RetryPayment"
 import Showtimes from "./pages/Showtimes"
 import AuthCallback from "./pages/AuthCallback"
+import PromotionList from "./pages/PromotionList"
+import PromotionDetail from "./pages/PromotionDetail"
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 
 function App() {
@@ -30,6 +32,8 @@ function App() {
           <Route path="/booking-history" element={<Navigate to="/profile" replace />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/member" element={<Member />} />
+          <Route path="/promos" element={<PromotionList />} />
+          <Route path="/promos/:promotionId" element={<PromotionDetail />} />
           <Route path="/auth-callback" element={<AuthCallback />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -67,17 +67,26 @@ public static class DependencyInjection
         services.AddScoped<ILoyaltyTierConfigurationRepository, LoyaltyTierConfigurationRepository>();
         services.AddScoped<ICouponTemplateRepository, CouponTemplateRepository>();
         services.AddScoped<ICustomerCouponRepository, CustomerCouponRepository>();
+        services.AddScoped<IPromotionProgramRepository, PromotionProgramRepository>();
+        services.AddScoped<ICustomerPromotionUsageRepository, CustomerPromotionUsageRepository>();
         services.AddScoped<ILoyaltyDiscountService, LoyaltyDiscountService>();
         services.AddScoped<IDiscountStrategy, LoyaltyTierDiscountStrategy>();
+        services.AddScoped<IDiscountStrategy, CouponDiscountStrategy>();
+        services.AddScoped<IDiscountStrategy, PromotionDiscountStrategy>();
+        services.AddScoped<IPromotionScanService, PromotionScanService>();
         services.AddScoped<IQueryService, QueryService>();
         services.AddScoped<IUnitOfWork, EFUnitOfWork>();
         services.AddScoped<DataSeeder>();
         services.AddHttpClient();
 
-        // Email services
+        // Email services — LogEmailSender in Development, BrevoEmailSender in Production
         services.Configure<BrevoOptions>(configuration.GetSection(BrevoOptions.SectionName));
         var brevoApiKey = configuration[$"{BrevoOptions.SectionName}:ApiKey"];
-        if (!string.IsNullOrWhiteSpace(brevoApiKey))
+        var isProduction = string.Equals(
+            configuration["ASPNETCORE_ENVIRONMENT"],
+            "Production",
+            StringComparison.OrdinalIgnoreCase);
+        if (isProduction && !string.IsNullOrWhiteSpace(brevoApiKey))
         {
             services.AddHttpClient(nameof(BrevoEmailSender));
             services.AddScoped<IEmailSender, BrevoEmailSender>();

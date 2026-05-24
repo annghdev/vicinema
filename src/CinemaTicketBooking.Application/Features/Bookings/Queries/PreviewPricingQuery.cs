@@ -1,4 +1,6 @@
 using CinemaTicketBooking.Domain.Services;
+using Microsoft.EntityFrameworkCore;
+using CinemaTicketBooking.Application.Features.Promotions;
 
 namespace CinemaTicketBooking.Application.Features;
 
@@ -31,7 +33,8 @@ public class PreviewPricingQuery : IQuery<PreviewPricingResponse>
 public class PreviewPricingHandler(
     IUnitOfWork uow,
     IEnumerable<IDiscountStrategy> discountStrategies,
-    ILoyaltyDiscountService loyaltyDiscountService)
+    ILoyaltyDiscountService loyaltyDiscountService,
+    IPromotionScanService promotionScanService)
 {
     public async Task<PreviewPricingResponse> Handle(
         PreviewPricingQuery query,
@@ -81,35 +84,54 @@ public class PreviewPricingHandler(
         string? resolvedCouponCode = null;
         string? couponDescription = null;
 
-        // Build the temp booking once (used for both loyalty and coupon calculations)
+        // Build the temp booking once (used for all discount calculations)
         var tempBooking = BuildPreviewBooking(
             query, selectedTickets, resolvedConcessions, originAmount);
 
-        // 5. Run loyalty discount computation when customer is registered.
-        if (customer?.IsRegistered == true)
+        // 5. Promotion scanning FIRST (populate AppliedPromotions so strategies can see them).
+        var appliedPromotions = new List<Promotions.AppliedPromotionDto>();
+        var freeItems = new List<Promotions.FreeConcessionItemDto>();
+
+        var activePromotions = await uow.PromotionPrograms.GetActiveWithConditionsAsync(ct);
+        if (activePromotions.Count > 0)
         {
-            var activeTiers = await uow.LoyaltyTiers.GetActiveTiersAsync(ct);
+            var scanContext = BuildPromotionScanContext(
+                customer, showTime, selectedTickets, originAmount, ticketOrigin, concessionOrigin);
 
-            var aggregator = new DiscountStrategyComposite(discountStrategies);
-            aggregator.CalculateTotalDiscount(
-                tempBooking, customer, activeTiers);
+            var scanResult = await promotionScanService.ScanAsync(
+                activePromotions.ToList(), scanContext, ct);
 
-            // Extract per-category discount details for display.
-            var tierConfig = activeTiers.FirstOrDefault(t => t.Tier == customer.LoyaltyTier);
-            if (tierConfig is not null)
+            // Populate tempBooking.AppliedPromotions so PromotionDiscountStrategy can read them.
+            foreach (var promo in scanResult.AppliedPromotions)
             {
-                var result = loyaltyDiscountService.CalculateDiscount(
-                    tempBooking, customer, tierConfig);
-                ticketDiscount = result.TicketDiscount;
-                concessionDiscount = result.ConcessionDiscount;
-                loyaltyTierName = tierConfig.Name;
-                loyaltyTierDescription = tierConfig.Description;
-                ticketDiscountPercent = tierConfig.TicketDiscountPercent;
-                concessionDiscountPercent = tierConfig.ConcessionDiscountPercent;
+                tempBooking.AppliedPromotions.Add(BookingPromotion.Create(
+                    bookingId: tempBooking.Id,
+                    promotionProgramId: promo.PromotionProgramId,
+                    name: promo.PromotionName,
+                    discountAmount: promo.DiscountAmount,
+                    discountType: promo.DiscountType));
+
+                appliedPromotions.Add(new Promotions.AppliedPromotionDto(
+                    promo.PromotionProgramId,
+                    promo.PromotionName,
+                    promo.DiscountType,
+                    promo.DiscountAmount));
+            }
+
+            if (scanResult.FreeItems.Count > 0)
+            {
+                foreach (var freeItem in scanResult.FreeItems)
+                {
+                    var concession = await uow.Concessions.GetByIdAsync(freeItem.ConcessionId, ct);
+                    freeItems.Add(new Promotions.FreeConcessionItemDto(
+                        freeItem.ConcessionId,
+                        concession?.Name ?? "Unknown",
+                        freeItem.Quantity));
+                }
             }
         }
 
-        // 6. Handle coupon code if provided.
+        // 6. Handle coupon code if provided (BEFORE composite so CouponDiscountStrategy sees it).
         if (!string.IsNullOrWhiteSpace(query.CouponCode))
         {
             var (couponDiscount, couponCode, desc) = await ComputeCouponDiscountAsync(
@@ -117,9 +139,39 @@ public class PreviewPricingHandler(
             couponDiscountAmount = couponDiscount;
             resolvedCouponCode = couponCode;
             couponDescription = desc;
+            // Populate tempBooking so CouponDiscountStrategy can read it.
+            tempBooking.CouponCode = couponCode;
+            tempBooking.CouponDiscountAmount = couponDiscount;
         }
 
-        var totalDiscount = ticketDiscount + concessionDiscount + couponDiscountAmount;
+        // 7. Run ALL discount strategies through unified composite (Loyalty + Coupon + Promotion).
+        //    At this point tempBooking has CouponCode/CouponDiscountAmount and AppliedPromotions populated.
+        //    For guest users with promotions, create a dummy customer so the composite can still run.
+        var totalDiscount = 0m;
+        var effectiveCustomer = customer ?? new Customer { Id = Guid.Empty, Name = "Guest", IsRegistered = false };
+        if (effectiveCustomer.IsRegistered || tempBooking.AppliedPromotions.Count > 0)
+        {
+            var activeTiers = await uow.LoyaltyTiers.GetActiveTiersAsync(ct);
+            var aggregator = new DiscountStrategyComposite(discountStrategies);
+            totalDiscount = aggregator.CalculateTotalDiscount(tempBooking, effectiveCustomer, activeTiers);
+
+            // Extract per-category loyalty details for display (only for registered customers).
+            if (customer?.IsRegistered == true)
+            {
+                var tierConfig = activeTiers.FirstOrDefault(t => t.Tier == customer.LoyaltyTier);
+                if (tierConfig is not null)
+                {
+                    var result = loyaltyDiscountService.CalculateDiscount(
+                        tempBooking, customer, tierConfig);
+                    ticketDiscount = result.TicketDiscount;
+                    concessionDiscount = result.ConcessionDiscount;
+                    loyaltyTierName = tierConfig.Name;
+                    loyaltyTierDescription = tierConfig.Description;
+                    ticketDiscountPercent = tierConfig.TicketDiscountPercent;
+                    concessionDiscountPercent = tierConfig.ConcessionDiscountPercent;
+                }
+            }
+        }
 
         return new PreviewPricingResponse(
             OriginAmount: originAmount,
@@ -134,7 +186,10 @@ public class PreviewPricingHandler(
             ConcessionDiscountPercent: concessionDiscountPercent,
             CouponDiscountAmount: couponDiscountAmount,
             CouponCode: resolvedCouponCode,
-            CouponDescription: couponDescription);
+            CouponDescription: couponDescription,
+            PromotionDiscountAmount: tempBooking.TotalPromotionDiscount,
+            AppliedPromotions: appliedPromotions,
+            FreeItems: freeItems);
     }
 
     private async Task<(decimal Discount, string Code, string? Description)> ComputeCouponDiscountAsync(
@@ -237,6 +292,48 @@ public class PreviewPricingHandler(
         };
 
         return booking;
+    }
+
+    private static PromotionScanContext BuildPromotionScanContext(
+        Customer? customer,
+        ShowTime showTime,
+        List<Ticket> selectedTickets,
+        decimal originAmount,
+        decimal ticketAmount,
+        decimal concessionAmount)
+    {
+        var seatTypes = new List<string>();
+        var seatIds = selectedTickets
+            .Where(t => t.SeatId.HasValue)
+            .Select(t => t.SeatId!.Value)
+            .Distinct()
+            .ToList();
+
+        if (seatIds.Count > 0 && showTime.Screen?.Seats != null)
+        {
+            seatTypes = showTime.Screen.Seats
+                .Where(s => seatIds.Contains(s.Id))
+                .Select(s => s.Type.ToString())
+                .Distinct()
+                .ToList();
+        }
+
+        return new PromotionScanContext
+        {
+            CustomerId = customer?.Id,
+            CustomerAge = customer?.DateOfBirth.HasValue == true
+                ? (int)((DateTimeOffset.UtcNow - customer.DateOfBirth.Value).TotalDays / 365.25)
+                : null,
+            CustomerBirthMonth = customer?.DateOfBirth?.Month,
+            CustomerGender = customer?.Gender,
+            CustomerTier = customer?.LoyaltyTier.ToString(),
+            BookingOriginAmount = originAmount,
+            TicketAmount = ticketAmount,
+            ConcessionAmount = concessionAmount,
+            TicketCount = selectedTickets.Count,
+            SeatTypes = seatTypes,
+            ShowtimeFormat = showTime.Format.ToString()
+        };
     }
 }
 
