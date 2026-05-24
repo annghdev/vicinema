@@ -326,6 +326,8 @@ __pycache__/
 # Tools
 .cursor/
 .agents/
+/AGENTS.md
+/.opencode
 .context/
 .docs/
 *.env

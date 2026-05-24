@@ -3,6 +3,7 @@ import { type PaymentRedirectBehavior } from "../types/Payment"
 import {
   type CreateBookingRequest,
   type CreateBookingResponse,
+  type CreateBookingResponseRaw,
   type RetryPaymentRequest,
   type BookingDetailsDto,
   type BookingHistoryItemDto,
@@ -12,18 +13,6 @@ import {
   normalizeResponse,
 } from "../types/Booking"
 import { type PagedResult } from "../types/Common"
-
-type CreateBookingResponseRaw = {
-  bookingId: string
-  paymentExpiresAt: string
-  originAmount: number
-  finalAmount: number
-  paymentStatus: string
-  paymentUrl: string | null
-  redirectBehavior: PaymentRedirectBehavior | null
-  paymentTransactionId: string | null
-  gatewayTransactionId: string | null
-}
 
 export async function createBooking(body: CreateBookingRequest): Promise<CreateBookingResponse> {
   const response = await httpClient.post<CreateBookingResponseRaw>("/api/bookings", {

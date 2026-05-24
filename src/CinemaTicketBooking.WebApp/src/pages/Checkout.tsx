@@ -6,6 +6,7 @@ import { cancelBooking, createBooking, previewPricing, retryPayment } from "../a
 import { getConcessions } from "../apis/concessionApi"
 import { connectPaymentHub } from "../apis/paymentRealtime"
 import { getMyCoupons, verifyCoupon } from "../apis/couponApi"
+import { getActivePromotions } from "../apis/promotionApi"
 import { PaymentQRModal } from "../components/PaymentQRModal"
 import { getAvailableGateways, getFakePaymentSuccess } from "../apis/paymentApi"
 import { getShowTimeById } from "../apis/showtimeApi"
@@ -17,6 +18,7 @@ import type { ShowTimeDetailDto, ShowTimeTicketDto } from "../types/ShowTime"
 import type { CreateBookingResponse, PreviewPricingResponse } from "../types/Booking"
 import type { ConcessionDto } from "../types/Concession"
 import type { CustomerCouponDto } from "../types/Coupon"
+import type { AppliedPromotionDto, FreeConcessionItemDto, PromotionProgramDto } from "../types/Promotion"
 import { isRedirectBehavior, type PaymentConfirmedRealtimeEvent, type PaymentGatewayOptionDto, type VerifyPaymentResponse } from "../types/Payment"
 
 type CheckoutLocationState = {
@@ -129,6 +131,14 @@ function Checkout() {
   const [couponError, setCouponError] = useState<string | null>(null)
   const [selectedPersonalCoupon, setSelectedPersonalCoupon] = useState<string | null>(null)
 
+  // ═══════════════════════════════════════════════════════════
+  // Promotion state
+  // ═══════════════════════════════════════════════════════════
+  const [appliedPromotions, setAppliedPromotions] = useState<AppliedPromotionDto[]>([])
+  const [freeItems, setFreeItems] = useState<FreeConcessionItemDto[]>([])
+  const [promotionDiscountAmount, setPromotionDiscountAmount] = useState(0)
+  const [availablePromotions, setAvailablePromotions] = useState<PromotionProgramDto[]>([])
+
   const backToSeatSelectionPath = showtimeId ? `/showtimes/${showtimeId}/seats` : "/showtimes"
 
   useEffect(() => {
@@ -205,6 +215,12 @@ function Checkout() {
     void loadCoupons()
     return () => { cancelled = true }
   }, [showtimeId])
+
+  useEffect(() => {
+    getActivePromotions().then((data) => {
+      setAvailablePromotions(data)
+    }).catch(() => {})
+  }, [])
 
   const isPostPayQrFlow = useMemo(
     () => postBooking && isRedirectBehavior(postBooking.redirectBehavior) !== "Redirect",
@@ -283,7 +299,12 @@ function Checkout() {
         selectedTicketIds: selectedTicketIds,
         concessions: concessionsList,
       })
-        .then(setPreviewData)
+        .then((data) => {
+          setPreviewData(data)
+          setAppliedPromotions(data.appliedPromotions || [])
+          setFreeItems(data.freeItems || [])
+          setPromotionDiscountAmount(data.promotionDiscountAmount || 0)
+        })
         .catch(() => setPreviewData(null))
     }, 600)
 
@@ -318,7 +339,12 @@ function Checkout() {
         concessions: concessionsList,
         couponCode: effectiveCouponCode,
       })
-        .then(setPreviewData)
+        .then((data) => {
+          setPreviewData(data)
+          setAppliedPromotions(data.appliedPromotions || [])
+          setFreeItems(data.freeItems || [])
+          setPromotionDiscountAmount(data.promotionDiscountAmount || 0)
+        })
         .catch(() => setPreviewData(null))
     }, 600)
 
@@ -331,7 +357,8 @@ function Checkout() {
   const displayOriginAmount = previewData?.originAmount ?? totalAmount
   const displayFinalAmount = previewData?.finalAmount ?? totalAmount
   const displayTotalDiscount = previewData?.totalDiscount ?? 0
-  const hasDiscount = previewData?.isRegisteredCustomer === true && displayTotalDiscount > 0
+  const displayLoyaltyDiscount = (previewData?.ticketDiscount ?? 0) + (previewData?.concessionDiscount ?? 0)
+  const hasDiscount = (previewData?.isRegisteredCustomer === true || (previewData?.appliedPromotions?.length ?? 0) > 0) && displayTotalDiscount > 0
   const hasCouponDiscount = (previewData?.couponDiscountAmount ?? 0) > 0
 
   const setQty = useCallback((concessionId: string, next: number) => {
@@ -443,9 +470,11 @@ function Checkout() {
           quantity: l.quantity,
           amount: l.lineTotal,
         })),
+        appliedPromotions: postBooking?.appliedPromotions ?? [],
+        freeItems: postBooking?.freeItems ?? [],
       },
     } : undefined)
-  }, [navigate, showtime?.movieName, showtime?.screenCode, showtime?.startAt, showtime?.cinemaName, selectedTickets, postBooking?.finalAmount, concessionLines])
+  }, [navigate, showtime?.movieName, showtime?.screenCode, showtime?.startAt, showtime?.cinemaName, selectedTickets, postBooking?.finalAmount, postBooking?.appliedPromotions, postBooking?.freeItems, concessionLines])
 
   const onPaymentConfirmedRealtime = useCallback((event: PaymentConfirmedRealtimeEvent) => {
     setModalError(null)
@@ -646,6 +675,23 @@ function Checkout() {
           <h1 className="mb-2 font-headline text-4xl font-bold tracking-tight md:text-5xl">Thanh toán</h1>
           <p className="text-on-surface-variant">Hoàn tất đặt vé để có trải nghiệm điện ảnh khó quên.</p>
         </div>
+
+        {availablePromotions.length > 0 && (
+          <div className="rounded-lg border border-outline-variant/20 bg-surface-container-low p-4">
+            <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-secondary">
+              <span className="material-symbols-outlined text-base">campaign</span>
+              Khuyến mãi đang diễn ra
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {availablePromotions.map((promo) => (
+                <span key={promo.id} className="inline-flex items-center gap-1 rounded-full border border-outline-variant/20 bg-surface-container-highest px-3 py-1 text-xs text-on-surface-variant">
+                  <span className="material-symbols-outlined text-xs">sell</span>
+                  {promo.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         <section className="rounded-xl border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
           <h2 className="mb-4 font-headline text-xl font-semibold">Thông tin liên hệ</h2>
@@ -923,15 +969,17 @@ function Checkout() {
           </div>
           {hasDiscount && previewData && (
             <div className="mt-3 space-y-1 border-t border-secondary/20 pt-3 text-sm">
+              {previewData.isRegisteredCustomer && displayLoyaltyDiscount > 0 && (
               <div className="flex items-center justify-between text-secondary">
                 <span className="flex items-center gap-1.5 font-medium">
                   <span className="material-symbols-outlined text-base">loyalty</span>
                   Giảm giá thành viên
                 </span>
                 <span className="font-semibold text-red-400">
-                  −{formatCurrency(displayTotalDiscount)}
+                  −{formatCurrency(displayLoyaltyDiscount)}
                 </span>
               </div>
+              )}
               {previewData.loyaltyTierName && (
                 <div className="flex items-center justify-between text-[11px] text-on-surface-variant/70">
                   <span>
@@ -966,6 +1014,40 @@ function Checkout() {
               {previewData.couponDescription && (
                 <p className="text-[11px] text-on-surface-variant/70">{previewData.couponDescription}</p>
               )}
+            </div>
+          )}
+          {appliedPromotions.length > 0 && (
+            <div className="border-t border-outline-variant/20 pt-3 mt-3">
+              <h4 className="text-sm font-semibold text-secondary mb-2">
+                <span className="material-symbols-outlined text-sm mr-1">sell</span> 
+                Khuyến mãi áp dụng
+              </h4>
+              {appliedPromotions.map((promo, idx) => (
+                <div key={idx} className="flex justify-between items-center text-sm text-secondary mb-1">
+                  <span>{promo.promotionName}</span>
+                  <span>-{promo.discountAmount.toLocaleString('vi-VN')}đ</span>
+                </div>
+              ))}
+              {appliedPromotions.length > 1 && promotionDiscountAmount > 0 && (
+                <div className="flex justify-between text-sm font-medium text-secondary mt-2 pt-2 border-t border-outline-variant/20">
+                  <span>Tổng giảm khuyến mãi</span>
+                  <span>-{promotionDiscountAmount.toLocaleString('vi-VN')}đ</span>
+                </div>
+              )}
+            </div>
+          )}
+          {freeItems.length > 0 && (
+            <div className="border-t border-outline-variant/20 pt-3 mt-3">
+              <h4 className="text-sm font-semibold text-secondary mb-2">
+                <span className="material-symbols-outlined text-sm mr-1">card_giftcard</span> 
+                Tặng kèm
+              </h4>
+              {freeItems.map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center text-sm text-on-surface-variant mb-1">
+                  <span>{item.quantity}x {item.concessionName}</span>
+                  <span className="font-medium">0đ</span>
+                </div>
+              ))}
             </div>
           )}
           {submitError && <div className="mt-4 rounded border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{submitError}</div>}
