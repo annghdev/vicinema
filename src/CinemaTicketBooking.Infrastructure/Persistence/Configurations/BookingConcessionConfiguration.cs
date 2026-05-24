@@ -15,6 +15,7 @@ public class BookingConcessionConfiguration : IEntityTypeConfiguration<BookingCo
         builder.Property(x => x.BookingId).IsRequired();
         builder.Property(x => x.ConcessionId).IsRequired();
         builder.Property(x => x.Quantity).IsRequired();
+        builder.Property(x => x.IsFree).IsRequired();
 
         builder.HasOne(x => x.Concession)
             .WithMany()

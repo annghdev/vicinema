@@ -5,7 +5,7 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets pricing policies with pagination, filtering, and sorting.
 /// </summary>
-public class GetPagedPricingPoliciesQuery : IQuery<PagedResult<PricingPolicyDto>>
+public class GetPagedPricingPoliciesQuery : ICachableQuery<PagedResult<PricingPolicyDto>>
 {
     public int PageNumber { get; set; } = 1;
     public int PageSize { get; set; } = 20;
@@ -16,6 +16,8 @@ public class GetPagedPricingPoliciesQuery : IQuery<PagedResult<PricingPolicyDto>
     public string SortBy { get; set; } = "createdAt";
     public string SortDirection { get; set; } = "desc";
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => PricingPolicyCacheKeys.GetPagedPricingPolicies(PageNumber, PageSize, CinemaId, ScreenType, SeatType, IsActive, SortBy, SortDirection);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>

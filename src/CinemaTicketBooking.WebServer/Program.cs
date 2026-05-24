@@ -23,6 +23,7 @@ builder.AddWolverine();
 builder.AddServiceDefaults();
 
 // Add services to the container.
+builder.Services.AddScoped<ICorrelationIdAccessor, CorrelationIdAccessor>();
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
 
@@ -102,6 +103,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseForwardedHeaders(new ForwardedHeadersOptions
@@ -127,6 +129,8 @@ else
 
 app.UseRouting();
 
+app.UseRateLimiter();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -141,6 +145,9 @@ app.MapCinemaEndpoints();
 app.MapMovieEndpoints();
 app.MapSlideEndpoints();
 app.MapConcessionEndpoints();
+app.MapLoyaltyEndpoints();
+app.MapCouponEndpoints();
+app.MapPromotionEndpoints();
 app.MapScreenEndpoints();
 app.MapPaymentEndpoints();
 app.MapTestEndpoints();

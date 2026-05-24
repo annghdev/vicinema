@@ -23,7 +23,7 @@ public class SeatSelectionPolicy : AggregateRoot
     /// </summary>
     public static SeatSelectionPolicy CreateDefault()
     {
-        return new SeatSelectionPolicy
+        var policy = new SeatSelectionPolicy
         {
             Name = "Global default pre-checkout seat policy",
             IsGlobalDefault = true,
@@ -36,6 +36,35 @@ public class SeatSelectionPolicy : AggregateRoot
             IsolatedRowEndSingleLevel = SeatSelectionPolicyLevel.Warning,
             MisalignedRowsLevel = SeatSelectionPolicyLevel.Block
         };
+
+        policy.RaiseEvent(new SeatSelectionPolicyCreated(policy.Id));
+        return policy;
+    }
+
+    public void Update(
+        string name,
+        bool isGlobalDefault,
+        bool isActive,
+        int maxTickets,
+        int maxRows,
+        SeatSelectionPolicyLevel orphan,
+        SeatSelectionPolicyLevel checkerboard,
+        SeatSelectionPolicyLevel split,
+        SeatSelectionPolicyLevel isolated,
+        SeatSelectionPolicyLevel misaligned)
+    {
+        Name = name;
+        IsGlobalDefault = isGlobalDefault;
+        IsActive = isActive;
+        MaxTicketsPerCheckout = maxTickets;
+        MaxRowsPerCheckout = maxRows;
+        OrphanSeatLevel = orphan;
+        CheckerboardLevel = checkerboard;
+        SplitAcrossAisleLevel = split;
+        IsolatedRowEndSingleLevel = isolated;
+        MisalignedRowsLevel = misaligned;
+
+        RaiseEvent(new SeatSelectionPolicyUpdated(Id));
     }
 
     /// <summary>

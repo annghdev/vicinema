@@ -5,10 +5,12 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets screens, optionally filtered by cinema.
 /// </summary>
-public class GetScreensQuery : IQuery<IReadOnlyList<ScreenDto>>
+public class GetScreensQuery : ICachableQuery<IReadOnlyList<ScreenDto>>
 {
     public Guid? CinemaId { get; set; }
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => ScreenCacheKeys.GetScreens(CinemaId);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>

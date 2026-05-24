@@ -4,6 +4,7 @@ using CinemaTicketBooking.Application.Features;
 using CinemaTicketBooking.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Wolverine;
 
 namespace CinemaTicketBooking.WebServer.Controllers;
@@ -12,6 +13,7 @@ namespace CinemaTicketBooking.WebServer.Controllers;
 /// Handles showtime management server-side rendered pages.
 /// </summary>
 [Authorize(AuthenticationSchemes = "Identity.Application")]
+[EnableRateLimiting("fixed")]
 public class ShowTimeController(IMessageBus bus) : Controller
 {
     /// <summary>
@@ -152,6 +154,7 @@ public class ShowTimeController(IMessageBus bus) : Controller
 /// <summary>
 /// ViewModel for Showtime Calendar layout.
 /// </summary>
+[EnableRateLimiting("fixed")]
 public class ShowTimeCalendarViewModel
 {
     public DateOnly SelectedDate { get; set; }
@@ -160,3 +163,4 @@ public class ShowTimeCalendarViewModel
     public IReadOnlyList<ShowTimeDto> ShowTimes { get; set; } = [];
     public IReadOnlyList<MovieDto> Movies { get; set; } = [];
 }
+

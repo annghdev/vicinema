@@ -4,6 +4,7 @@ using CinemaTicketBooking.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace CinemaTicketBooking.WebServer.Controllers;
@@ -12,6 +13,7 @@ namespace CinemaTicketBooking.WebServer.Controllers;
 /// Handles administrative roles and static permission policy modifications.
 /// </summary>
 [Authorize(AuthenticationSchemes = "Identity.Application", Roles = "SystemAdmin,Admin")]
+[EnableRateLimiting("fixed")]
 public class RoleController : Controller
 {
     private readonly RoleManager<Role> _roleManager;
@@ -127,9 +129,11 @@ public class RoleController : Controller
 /// <summary>
 /// ViewModel mapping roles matrix securely.
 /// </summary>
+[EnableRateLimiting("fixed")]
 public class RoleManagementViewModel
 {
     public List<Role> Roles { get; set; } = [];
     public Dictionary<Guid, List<string>> RolePermissions { get; set; } = [];
     public List<string> AvailablePermissions { get; set; } = [];
 }
+

@@ -93,10 +93,16 @@ public class GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExcep
         context.Response.StatusCode = status;
         context.Response.ContentType = MediaTypeNames.Application.Json;
 
+        // For business/validation errors (4xx), show the exception message (user-friendly).
+        // For 500 errors in development, show the full stack trace for debugging.
+        var detail = status >= 500 && environment.IsDevelopment()
+            ? ex.ToString()
+            : ex.Message;
+
         var problem = new ProblemBody(
             Title: title,
             Status: status,
-            Detail: environment.IsDevelopment() ? ex.ToString() : null,
+            Detail: detail,
             Errors: ex is ValidationException validationException
                 ? validationException.Errors
                     .GroupBy(x => x.PropertyName)

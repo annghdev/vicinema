@@ -11,6 +11,7 @@ public static class MovieEndpoints
     public static void MapMovieEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/movies")
+            .RequireRateLimiting("fixed")
             .WithTags("Movies")
             .AllowAnonymous();
 
@@ -142,3 +143,4 @@ public sealed class GetUpcomingAndNowShowingMovieDropdownRequest
     public string? SearchTerm { get; init; }
     public int MaxItems { get; init; } = 100;
 }
+

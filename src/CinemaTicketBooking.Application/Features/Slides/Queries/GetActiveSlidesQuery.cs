@@ -6,9 +6,11 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets all active promotional slides.
 /// </summary>
-public class GetActiveSlidesQuery : IQuery<IReadOnlyList<SlideDto>>
+public class GetActiveSlidesQuery : ICachableQuery<IReadOnlyList<SlideDto>>
 {
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => SlideCacheKeys.GetActiveSlides();
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>

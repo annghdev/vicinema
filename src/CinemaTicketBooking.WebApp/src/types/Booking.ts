@@ -1,4 +1,5 @@
 import { type PaymentRedirectBehavior } from "./Payment"
+import type { AppliedPromotionDto, FreeConcessionItemDto } from "./Promotion"
 
 export type CreateBookingRequest = {
   showTimeId: string
@@ -8,10 +9,10 @@ export type CreateBookingRequest = {
   customerPhoneNumber: string
   selectedTicketIds: string[]
   concessions: { concessionId: string; quantity: number }[]
-  discountAmount: number
   paymentMethod: string
   returnUrl: string
   ipAddress: string
+  couponCode?: string
 }
 
 export type CreateBookingResponse = {
@@ -24,6 +25,9 @@ export type CreateBookingResponse = {
   redirectBehavior: PaymentRedirectBehavior | null
   paymentTransactionId: string | null
   gatewayTransactionId: string | null
+  promotionDiscountAmount: number
+  appliedPromotions: AppliedPromotionDto[]
+  freeItems: FreeConcessionItemDto[]
 }
 
 export type CreateBookingResponseRaw = {
@@ -36,6 +40,9 @@ export type CreateBookingResponseRaw = {
   redirectBehavior: PaymentRedirectBehavior | null
   paymentTransactionId: string | null
   gatewayTransactionId: string | null
+  appliedPromotions: AppliedPromotionDto[]
+  freeItems: FreeConcessionItemDto[]
+  promotionDiscountAmount: number
 }
 
 export function normalizeResponse(r: CreateBookingResponseRaw): CreateBookingResponse {
@@ -49,6 +56,9 @@ export function normalizeResponse(r: CreateBookingResponseRaw): CreateBookingRes
     redirectBehavior: r.redirectBehavior,
     paymentTransactionId: r.paymentTransactionId,
     gatewayTransactionId: r.gatewayTransactionId,
+    appliedPromotions: r.appliedPromotions ?? [],
+    freeItems: r.freeItems ?? [],
+    promotionDiscountAmount: r.promotionDiscountAmount ?? 0,
   }
 }
 
@@ -60,31 +70,32 @@ export type RetryPaymentRequest = {
   replacePendingPayment?: boolean
 }
 
-export type BookingDetailsDto = {
-  bookingId: string
+export type PreviewPricingRequest = {
   showTimeId: string
-  showTimeInfo: { screen: string; movie: string; startAt: string; endAt: string }
-  originalAmount: number
-  discountAmount: number
-  finalAmount: number
-  checkinQrCode: string
-  status: number | string
-  createdAt: string
-  tickets: { seatCode: string; price: number }[]
-  ticketIds: string[]
-  concessions: { name: string; imageUrl: string; price: number; quantity: number; amount: number }[]
+  customerSessionId: string
+  customerName: string
+  customerEmail: string
+  customerPhoneNumber: string
+  selectedTicketIds: string[]
+  concessions: { concessionId: string; quantity: number }[]
+  couponCode?: string
 }
 
-export type BookingHistoryItemDto = {
-  bookingId: string
-  showTimeInfo: { screen: string; movie: string; startAt: string; endAt: string }
+export type PreviewPricingResponse = {
+  originAmount: number
+  ticketDiscount: number
+  concessionDiscount: number
+  totalDiscount: number
   finalAmount: number
-  createdAt: string
-  status: number | string
-}
-
-export type GetBookingHistoryRequest = {
-  pageNumber?: number
-  pageSize?: number
-  date?: string
+  isRegisteredCustomer: boolean
+  loyaltyTierName: string | null
+  loyaltyTierDescription: string | null
+  ticketDiscountPercent: number | null
+  concessionDiscountPercent: number | null
+  couponDiscountAmount: number
+  couponCode: string | null
+  couponDescription: string | null
+  promotionDiscountAmount: number
+  appliedPromotions: AppliedPromotionDto[]
+  freeItems: FreeConcessionItemDto[]
 }

@@ -5,12 +5,14 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets concessions for dropdown data source.
 /// </summary>
-public class GetConcessionDropdownQuery : IQuery<IReadOnlyList<ConcessionDropdownDto>>
+public class GetConcessionDropdownQuery : ICachableQuery<IReadOnlyList<ConcessionDropdownDto>>
 {
     public string? SearchTerm { get; set; }
     public bool OnlyAvailable { get; set; } = true;
     public int MaxItems { get; set; } = 100;
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => ConcessionCacheKeys.GetConcessionDropdown(SearchTerm, OnlyAvailable, MaxItems);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>

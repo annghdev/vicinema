@@ -40,6 +40,7 @@ public class Slide : AggregateRoot
             IsActive = isActive
         };
 
+        slide.RaiseEvent(new SlideCreated());
         return slide;
     }
 
@@ -61,5 +62,7 @@ public class Slide : AggregateRoot
         Type = type;
         VideoUrl = videoUrl;
         IsActive = isActive;
+
+        RaiseEvent(new SlideUpdated());
     }
 }

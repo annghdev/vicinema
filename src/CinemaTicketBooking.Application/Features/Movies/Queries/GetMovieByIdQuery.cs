@@ -5,10 +5,12 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets a movie by id.
 /// </summary>
-public class GetMovieByIdQuery : IQuery<MovieDto?>
+public class GetMovieByIdQuery : ICachableQuery<MovieDto?>
 {
     public Guid Id { get; set; }
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => MovieCacheKeys.GetMovieById(Id);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>

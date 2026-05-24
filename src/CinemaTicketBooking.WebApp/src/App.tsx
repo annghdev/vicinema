@@ -1,6 +1,6 @@
 import Footer from "./components/Footer"
 import Header from "./components/Header"
-import BookingHistory from "./pages/BookingHistory"
+import Profile from "./pages/Profile"
 import Checkout from "./pages/Checkout"
 import Home from "./pages/Home"
 import Member from "./pages/Member"
@@ -11,6 +11,8 @@ import PaymentResult from "./pages/PaymentResult"
 import RetryPayment from "./pages/RetryPayment"
 import Showtimes from "./pages/Showtimes"
 import AuthCallback from "./pages/AuthCallback"
+import PromotionList from "./pages/PromotionList"
+import PromotionDetail from "./pages/PromotionDetail"
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 
 function App() {
@@ -27,11 +29,15 @@ function App() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/payment-result" element={<PaymentResult />} />
           <Route path="/retry-payment" element={<RetryPayment />} />
-          <Route path="/booking-history" element={<BookingHistory />} />
+          <Route path="/booking-history" element={<Navigate to="/profile" replace />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/member" element={<Member />} />
+          <Route path="/promos" element={<PromotionList />} />
+          <Route path="/promos/:promotionId" element={<PromotionDetail />} />
           <Route path="/auth-callback" element={<AuthCallback />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+
         <Footer />
       </div>
     </BrowserRouter>

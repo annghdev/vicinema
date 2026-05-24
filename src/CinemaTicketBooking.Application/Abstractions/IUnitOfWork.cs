@@ -17,6 +17,11 @@ public interface IUnitOfWork
     ISeatSelectionPolicyRepository SeatSelectionPolicies { get; }
     IPaymentTransactionRepository PaymentTransactions { get; }
     ISlideRepository Slides { get; }
+    ILoyaltyTierConfigurationRepository LoyaltyTiers { get; }
+    ICouponTemplateRepository CouponTemplates { get; }
+    ICustomerCouponRepository CustomerCoupons { get; }
+    IPromotionProgramRepository PromotionPrograms { get; }
+    ICustomerPromotionUsageRepository CustomerPromotionUsages { get; }
 
     Task CommitAsync(CancellationToken cancellationToken = default);
 }

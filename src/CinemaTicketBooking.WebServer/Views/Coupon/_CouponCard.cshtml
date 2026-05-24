@@ -1,0 +1,68 @@
+@using CinemaTicketBooking.Application.Features.Coupons
+@model CouponTemplateDto
+@{
+    var canManage = ViewBag.canManage as bool? ?? false;
+}
+
+<div class="group relative overflow-hidden rounded-3xl border border-white/5 bg-surface-container-low/40 p-6 backdrop-blur-xl transition-all hover:border-white/10 hover:bg-surface-container-low/60 shadow-2xl">
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div class="flex items-center gap-4">
+            <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20">
+                <span class="material-symbols-outlined text-2xl text-secondary">@(Model.Type == "Public" ? "groups" : "person")</span>
+            </div>
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <code class="rounded-lg bg-white/10 px-3 py-1 font-mono text-sm font-bold text-secondary tracking-wider">@Model.Code</code>
+                    <span class="rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest @(Model.IsActive ? "bg-emerald-500/10 text-emerald-300 border-emerald-300/30" : "bg-rose-500/10 text-rose-300 border-rose-300/30")">
+                        @(Model.IsActive ? "Hoạt động" : "Tạm tắt")
+                    </span>
+                    <span class="rounded-full border border-white/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                        @(Model.Type == "Public" ? "Dùng chung" : "Cá nhân")
+                    </span>
+                </div>
+                <p class="text-sm text-on-surface-variant">@Model.Description</p>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-4 text-sm">
+            <div class="text-center">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Giảm</p>
+                <p class="font-bold text-secondary">
+                    @if (Model.DiscountType == "Fixed")
+                    {
+                        @($"{Model.DiscountValue:N0}đ")
+                    }
+                    else
+                    {
+                        @($"{Model.DiscountValue}%")
+                        if (Model.MaxDiscountAmount.HasValue)
+                        {
+                            <span class="text-xs text-slate-400">(tối đa @Model.MaxDiscountAmount.Value:N0₫)</span>
+                        }
+                    }
+                </p>
+            </div>
+            <div class="text-center">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Phạm vi</p>
+                <p class="font-semibold">@Model.Scope</p>
+            </div>
+            <div class="text-center">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Đã dùng</p>
+                <p class="font-semibold">@Model.TotalUsedCount / @(Model.MaxUsageCount > 0 ? Model.MaxUsageCount.ToString() : "∞")</p>
+            </div>
+            <div class="text-center">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Hiệu lực</p>
+                <p class="font-mono text-xs">@Model.DurationDays ngày</p>
+            </div>
+
+            @if (canManage)
+            {
+                <label class="relative inline-flex cursor-pointer items-center">
+                    <input type="checkbox" class="peer sr-only" @(Model.IsActive ? "checked" : "")
+                           onchange="toggleCouponStatus('@Model.Id', this.checked)" />
+                    <div class="peer h-6 w-11 rounded-full bg-white/10 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-slate-500 after:transition-all peer-checked:bg-secondary/30 peer-checked:after:translate-x-full peer-checked:after:bg-secondary"></div>
+                </label>
+            }
+        </div>
+    </div>
+</div>

@@ -30,3 +30,9 @@ export type AuthProfileResponse = {
   avatarUrl: string | null
   phoneNumber?: string | null
 }
+
+export type ChangePasswordRequest = {
+  currentPassword: string
+  newPassword: string
+}
+

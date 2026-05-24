@@ -5,9 +5,12 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets all seat selection policies.
 /// </summary>
-public class GetSeatSelectionPoliciesQuery : IQuery<IReadOnlyList<SeatSelectionPolicyDto>>
+public class GetSeatSelectionPoliciesQuery : ICachableQuery<IReadOnlyList<SeatSelectionPolicyDto>>
 {
+    public bool? IsActive { get; set; }
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => SeatSelectionPolicyCacheKeys.GetSeatSelectionPolicies(IsActive);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>

@@ -26,6 +26,12 @@ public class EFUnitOfWork(
     private IPaymentTransactionRepository? _paymentTransactions;
     private ISlideRepository? _slides;
 
+    private ILoyaltyTierConfigurationRepository? _loyaltyTiers;
+    private ICouponTemplateRepository? _couponTemplates;
+    private ICustomerCouponRepository? _customerCoupons;
+    private IPromotionProgramRepository? _promotionPrograms;
+    private ICustomerPromotionUsageRepository? _customerPromotionUsages;
+
     public ICinemaRepository Cinemas => _cinemas ??= serviceProvider.GetRequiredService<ICinemaRepository>();
     public IMovieRepository Movies => _movies ??= serviceProvider.GetRequiredService<IMovieRepository>();
     public IBookingRepository Bookings => _bookings ??= serviceProvider.GetRequiredService<IBookingRepository>();
@@ -38,16 +44,20 @@ public class EFUnitOfWork(
     public ISeatSelectionPolicyRepository SeatSelectionPolicies => _seatSelectionPolicies ??= serviceProvider.GetRequiredService<ISeatSelectionPolicyRepository>();
     public IPaymentTransactionRepository PaymentTransactions => _paymentTransactions ??= serviceProvider.GetRequiredService<IPaymentTransactionRepository>();
     public ISlideRepository Slides => _slides ??= serviceProvider.GetRequiredService<ISlideRepository>();
+    public ILoyaltyTierConfigurationRepository LoyaltyTiers => _loyaltyTiers ??= serviceProvider.GetRequiredService<ILoyaltyTierConfigurationRepository>();
+    public ICouponTemplateRepository CouponTemplates => _couponTemplates ??= serviceProvider.GetRequiredService<ICouponTemplateRepository>();
+    public ICustomerCouponRepository CustomerCoupons => _customerCoupons ??= serviceProvider.GetRequiredService<ICustomerCouponRepository>();
+    public IPromotionProgramRepository PromotionPrograms => _promotionPrograms ??= serviceProvider.GetRequiredService<IPromotionProgramRepository>();
+    public ICustomerPromotionUsageRepository CustomerPromotionUsages => _customerPromotionUsages ??= serviceProvider.GetRequiredService<ICustomerPromotionUsageRepository>();
 
     public async Task CommitAsync(CancellationToken ct = default)
     {
         ApplyAuditingInformation();
         ApplySoftDelete();
 
-        // Wolverine will automatically save changes to the database when dispatching messages with Outbox pattern,
-        // so we don't need to call SaveChangesAsync here.
 
         await DispatchEventsAsync(ct);
+        await db.SaveChangesAsync(ct);
     }
 
     private async Task DispatchEventsAsync(CancellationToken ct)

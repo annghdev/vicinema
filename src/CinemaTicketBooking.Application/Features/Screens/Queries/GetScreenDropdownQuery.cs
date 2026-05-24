@@ -5,13 +5,15 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets screens for dropdown data source, optionally filtered by cinema.
 /// </summary>
-public class GetScreenDropdownQuery : IQuery<IReadOnlyList<ScreenDropdownDto>>
+public class GetScreenDropdownQuery : ICachableQuery<IReadOnlyList<ScreenDropdownDto>>
 {
     public Guid? CinemaId { get; set; }
     public string? SearchTerm { get; set; }
     public bool OnlyActive { get; set; } = true;
     public int MaxItems { get; set; } = 100;
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => ScreenCacheKeys.GetScreenDropdown(CinemaId, OnlyActive, MaxItems);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>

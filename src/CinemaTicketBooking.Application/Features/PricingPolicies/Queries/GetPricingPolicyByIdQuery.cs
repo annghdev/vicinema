@@ -5,10 +5,12 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets a pricing policy by id.
 /// </summary>
-public class GetPricingPolicyByIdQuery : IQuery<PricingPolicyDto?>
+public class GetPricingPolicyByIdQuery : ICachableQuery<PricingPolicyDto?>
 {
     public Guid Id { get; set; }
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => PricingPolicyCacheKeys.GetPricingPolicyById(Id);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>

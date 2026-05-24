@@ -176,12 +176,35 @@
                     <span class="sidebar-text">Quản lý bắp nước</span>
                 </a>
             }
+            @if (User.IsInRole(RoleNames.SystemAdmin) || User.IsInRole(RoleNames.Admin))
+            {
+                <div class="px-6 py-2 mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Khuyến mãi</div>
+                <a class="flex items-center gap-3 px-6 py-4 font-headline uppercase tracking-widest text-xs transition-all duration-200 @(controller == "Coupon" && action == "Index" ? "text-[#00f4fe] bg-[#61b4fe]/10 border-r-4 border-[#00f4fe] drop-shadow-[0_0_5px_rgba(0,244,254,0.3)] translate-x-1" : "text-slate-500 hover:text-slate-200 hover:bg-white/5")"
+                   asp-controller="Coupon" asp-action="Index">
+                    <span class="material-symbols-outlined" data-icon="confirmation_number">confirmation_number</span>
+                    <span class="sidebar-text">Mã giảm giá</span>
+                </a>
+                <a class="flex items-center gap-3 px-6 py-4 font-headline uppercase tracking-widest text-xs transition-all duration-200 @(controller == "Promotion" && action == "Index" ? "text-[#00f4fe] bg-[#61b4fe]/10 border-r-4 border-[#00f4fe] drop-shadow-[0_0_5px_rgba(0,244,254,0.3)] translate-x-1" : "text-slate-500 hover:text-slate-200 hover:bg-white/5")"
+                   asp-controller="Promotion" asp-action="Index">
+                    <span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+                    <span class="sidebar-text">Khuyến mãi</span>
+                </a>
+            }
             @if ((await AuthorizationService.AuthorizeAsync(User, Permissions.SeatSelectionPoliciesView)).Succeeded)
             {
+                <div class="px-6 py-2 mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Cấu hình nghiệp vụ</div>
                 <a class="flex items-center gap-3 px-6 py-4 font-headline uppercase tracking-widest text-xs transition-all duration-200 @(controller == "SeatSelectionPolicy" && action == "Index" ? "text-[#00f4fe] bg-[#61b4fe]/10 border-r-4 border-[#00f4fe] drop-shadow-[0_0_5px_rgba(0,244,254,0.3)] translate-x-1" : "text-slate-500 hover:text-slate-200 hover:bg-white/5")"
                        asp-controller="SeatSelectionPolicy" asp-action="Index">
                     <span class="material-symbols-outlined" data-icon="airline_seat_recline_extra">airline_seat_recline_extra</span>
                     <span class="sidebar-text">Cấu hình chọn ghế</span>
+                </a>
+            }
+            @if (User.IsInRole(RoleNames.SystemAdmin) || User.IsInRole(RoleNames.Admin))
+            {
+                <a class="flex items-center gap-3 px-6 py-4 font-headline uppercase tracking-widest text-xs transition-all duration-200 @(controller == "Loyalty" && action == "Index" ? "text-[#00f4fe] bg-[#61b4fe]/10 border-r-4 border-[#00f4fe] drop-shadow-[0_0_5px_rgba(0,244,254,0.3)] translate-x-1" : "text-slate-500 hover:text-slate-200 hover:bg-white/5")"
+                   asp-controller="Loyalty" asp-action="Index">
+                    <span class="material-symbols-outlined" data-icon="security">security</span>
+                    <span class="sidebar-text">Tích điểm thành viên</span>
                 </a>
             }
             @if ((await AuthorizationService.AuthorizeAsync(User, Permissions.AccountsView)).Succeeded)

@@ -3,13 +3,18 @@ using CinemaTicketBooking.Application.Abstractions;
 using Microsoft.Extensions.Caching.Distributed;
 using StackExchange.Redis;
 
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
+
 namespace CinemaTicketBooking.Infrastructure.Cache;
 
 public class RedisCacheService(
     IDistributedCache distributedCache,
-    IConnectionMultiplexer connectionMultiplexer) : ICacheService
+    IConnectionMultiplexer connectionMultiplexer,
+    IOptions<RedisCacheOptions> redisOptions) : ICacheService
 {
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
+    private readonly string _instanceName = redisOptions.Value.InstanceName ?? string.Empty;
 
     /// <inheritdoc />
     public async Task<T?> GetAsync<T>(string key, CancellationToken ct = default)
@@ -45,14 +50,14 @@ public class RedisCacheService(
     /// <inheritdoc />
     public Task ClearAsync(CancellationToken ct = default)
     {
-        return RemoveKeysByPatternAsync("*", ct);
+        return RemoveKeysByPatternAsync($"{_instanceName}*", ct);
     }
 
     /// <inheritdoc />
     public async Task<bool> ExistsAsync(string key, CancellationToken ct = default)
     {
         var db = connectionMultiplexer.GetDatabase();
-        return await db.KeyExistsAsync(key);
+        return await db.KeyExistsAsync($"{_instanceName}{key}");
     }
 
     /// <inheritdoc />
@@ -63,7 +68,7 @@ public class RedisCacheService(
             return Task.CompletedTask;
         }
 
-        return RemoveKeysByPatternAsync($"{prefix}*", ct);
+        return RemoveKeysByPatternAsync($"{_instanceName}{prefix}*", ct);
     }
 
     private async Task RemoveKeysByPatternAsync(string pattern, CancellationToken ct)

@@ -7,7 +7,7 @@ namespace CinemaTicketBooking.Application.Features.Statistic.Queries;
 
 public record GetTopPerformingMoviesQuery : IQuery<IReadOnlyList<MoviePerformanceDto>>
 {
-    public string CorrelationId { get; init; } = Guid.NewGuid().ToString();
+    public string CorrelationId { get; set; } = Guid.NewGuid().ToString();
 }
 
 public class GetTopPerformingMoviesHandler(IQueryService queryService)

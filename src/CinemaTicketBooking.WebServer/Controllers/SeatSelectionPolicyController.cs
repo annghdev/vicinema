@@ -4,6 +4,7 @@ using CinemaTicketBooking.Application.Features;
 using CinemaTicketBooking.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Wolverine;
 
 namespace CinemaTicketBooking.WebServer.Controllers;
@@ -12,6 +13,7 @@ namespace CinemaTicketBooking.WebServer.Controllers;
 /// Handles seat selection policy management server-side rendered pages.
 /// </summary>
 [Authorize(AuthenticationSchemes = "Identity.Application")]
+[EnableRateLimiting("fixed")]
 public class SeatSelectionPolicyController(IMessageBus bus) : Controller
 {
     /// <summary>
@@ -90,3 +92,4 @@ public class SeatSelectionPolicyController(IMessageBus bus) : Controller
 
     public record ToggleStatusRequest(Guid Id, bool IsActive);
 }
+

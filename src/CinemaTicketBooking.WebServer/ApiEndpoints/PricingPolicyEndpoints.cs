@@ -11,6 +11,7 @@ public static class PricingPolicyEndpoints
     public static void MapPricingPolicyEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/pricing-policies")
+            .RequireRateLimiting("fixed")
             .WithTags("PricingPolicies")
             .AllowAnonymous();
 
@@ -152,3 +153,4 @@ public sealed class GetPricingPolicyDropdownRequest
     public bool OnlyActive { get; init; } = true;
     public int MaxItems { get; init; } = 100;
 }
+

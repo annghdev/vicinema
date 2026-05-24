@@ -5,7 +5,7 @@ namespace CinemaTicketBooking.Application.Features.Statistic.Queries;
 
 public record GetCinemaRevenueStatsQuery : IQuery<IReadOnlyList<CinemaRevenueDto>>
 {
-    public string CorrelationId { get; init; } = Guid.NewGuid().ToString();
+    public string CorrelationId { get; set; } = Guid.NewGuid().ToString();
 }
 
 public class GetCinemaRevenueStatsHandler(IQueryService queryService)
