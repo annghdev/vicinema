@@ -1,0 +1,493 @@
+@using CinemaTicketBooking.Application.Features.Promotions
+@using CinemaTicketBooking.Application.Common.Auth
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthorizationService
+
+@{
+    Layout = "_Layout";
+    var canCreate = (await AuthorizationService.AuthorizeAsync(User, Permissions.PromotionsCreate)).Succeeded;
+    var canEdit = (await AuthorizationService.AuthorizeAsync(User, Permissions.PromotionsEdit)).Succeeded;
+    var canDelete = (await AuthorizationService.AuthorizeAsync(User, Permissions.PromotionsDelete)).Succeeded;
+}
+
+<div class="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <!-- Header -->
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        @if (canCreate)
+        {
+            <button onclick="openCreateModal()" class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary to-primary-container px-6 py-3 text-sm font-bold text-on-primary shadow-lg shadow-primary/20 transition-transform active:scale-95 hover:scale-[1.02]">
+                <span class="material-symbols-outlined text-lg">add</span>
+                Tạo chương trình khuyến mãi
+            </button>
+        }
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto rounded-lg border border-white/5 bg-surface-container-low/40 backdrop-blur-xl shadow-2xl">
+        <table class="w-full text-sm">
+            <thead class="border-b border-white/5 bg-white/[0.02]">
+                <tr>
+                    <th class="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-slate-500">Tên chương trình</th>
+                    <th class="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-slate-500">Loại giảm</th>
+                    <th class="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-slate-500">Giá trị giảm</th>
+                    <th class="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-slate-500">Thời gian</th>
+                    <th class="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-slate-500">Điều kiện</th>
+                    <th class="px-6 py-4 text-center text-[10px] font-bold uppercase tracking-widest text-slate-500">Trạng thái</th>
+                    <th class="px-6 py-4 text-center text-[10px] font-bold uppercase tracking-widest text-slate-500">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="promotionTableBody">
+                <tr>
+                    <td colspan="7" class="px-6 py-12 text-center text-on-surface-variant">
+                        <span class="material-symbols-outlined text-3xl mb-2 block animate-pulse">hourglass_empty</span>
+                        <p class="text-sm">Đang tải dữ liệu...</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Info Alert -->
+    <div class="flex items-start gap-4 rounded-2xl border border-secondary/20 bg-secondary/5 p-4 text-secondary/80 backdrop-blur-md">
+        <span class="material-symbols-outlined mt-0.5">info</span>
+        <div class="text-sm">
+            <p class="font-bold uppercase tracking-widest text-[10px] mb-1">Hướng dẫn</p>
+            <p>Chương trình khuyến mãi tự động áp dụng khi khách hàng đặt vé đáp ứng đủ điều kiện. Có thể cấu hình giảm giá theo tổng hóa đơn, vé, bắp nước, hoặc tặng bắp nước miễn phí kèm điều kiện.</p>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_Form")
+
+@section Scripts {
+    <script>
+        const tbody = document.getElementById('promotionTableBody');
+        let allPromotions = [];
+
+        const discountTypeLabels = {
+            'OrderTotal': 'Tổng hóa đơn',
+            'Concession': 'Bắp nước',
+            'TicketOnly': 'Chỉ vé',
+            'FreeConcession': 'Tặng bắp nước'
+        };
+
+        function formatDiscount(promo) {
+            if (promo.discountType === 'FreeConcession') return 'Tặng miễn phí';
+            if (promo.discountForm === 'Percentage') {
+                let s = promo.discountValue + '%';
+                if (promo.maxDiscountAmount) s += ' (tối đa ' + promo.maxDiscountAmount.toLocaleString() + 'đ)';
+                return s;
+            }
+            return promo.discountValue.toLocaleString() + 'đ';
+        }
+
+        function formatDateRange(promo) {
+            const start = new Date(promo.startDate).toLocaleDateString('vi-VN');
+            const end = new Date(promo.endDate).toLocaleDateString('vi-VN');
+            return start + ' - ' + end;
+        }
+
+        function renderTable() {
+            if (allPromotions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center text-on-surface-variant"><span class="material-symbols-outlined text-3xl mb-2 block">campaign</span><p class="text-sm">Chưa có chương trình khuyến mãi nào.</p></td></tr>';
+                return;
+            }
+            tbody.innerHTML = allPromotions.map(p => {
+                const statusClass = p.isActive ? 'bg-emerald-500/10 text-emerald-300 border-emerald-300/30' : 'bg-rose-500/10 text-rose-300 border-rose-300/30';
+                const statusText = p.isActive ? 'Hoạt động' : 'Tạm tắt';
+                const dtLabel = discountTypeLabels[p.discountType] || p.discountType;
+                const posterHtml = p.posterImage
+                    ? `<img src="${escapeHtml(p.posterImage)}" alt="" class="h-10 w-10 rounded-xl object-cover border border-white/10" />`
+                    : `<div class="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center"><span class="material-symbols-outlined text-primary text-lg">campaign</span></div>`;
+                const canManage = @Json.Serialize(canEdit || canDelete);
+                const editHtml = @Json.Serialize(canEdit);
+                const deleteHtml = @Json.Serialize(canDelete);
+                let actionsHtml = '';
+                if (editHtml) {
+                    actionsHtml += `<label class="relative inline-flex cursor-pointer items-center" title="Bật/Tắt"><input type="checkbox" class="peer sr-only" ${p.isActive ? 'checked' : ''} onchange="togglePromotion('${p.id}', this.checked)" /><div class="peer h-6 w-11 rounded-full bg-white/10 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-slate-500 after:transition-all peer-checked:bg-secondary/30 peer-checked:after:translate-x-full peer-checked:after:bg-secondary"></div></label><button onclick="openEditModal('${p.id}')" class="p-2 rounded-lg text-slate-400 hover:bg-primary/10 hover:text-primary transition-all" title="Chỉnh sửa"><span class="material-symbols-outlined text-lg">edit</span></button>`;
+                }
+                if (deleteHtml) {
+                    actionsHtml += `<button onclick="deletePromotion('${p.id}')" class="p-2 rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all" title="Xóa"><span class="material-symbols-outlined text-lg">delete</span></button>`;
+                }
+                return `<tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors"><td class="px-6 py-4"><div class="flex items-center gap-3">${posterHtml}<div><p class="font-bold text-on-surface">${escapeHtml(p.name)}</p>${p.description ? `<p class="text-xs text-on-surface-variant mt-0.5 max-w-[200px] truncate">${escapeHtml(p.description)}</p>` : ''}</div></div></td><td class="px-6 py-4"><span class="rounded-full border border-white/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">${dtLabel}</span></td><td class="px-6 py-4"><span class="font-mono text-sm font-bold text-secondary">${formatDiscount(p)}</span></td><td class="px-6 py-4"><p class="text-xs text-on-surface-variant font-mono">${formatDateRange(p)}</p></td><td class="px-6 py-4"><span class="text-xs text-on-surface-variant">${p.conditionCount} điều kiện</span></td><td class="px-6 py-4 text-center"><span class="rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest ${statusClass}">${statusText}</span></td><td class="px-6 py-4 text-center"><div class="flex items-center justify-center gap-2">${actionsHtml}</div></td></tr>`;
+            }).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        async function loadPromotions() {
+            window.showLoading();
+            try {
+                const resp = await fetch('@Url.Action("GetList", "Promotion")');
+                const result = await resp.json();
+                allPromotions = result.data || [];
+                renderTable();
+            } catch (err) {
+                window.showToast('Không thể tải dữ liệu khuyến mãi.', 'error');
+            } finally {
+                window.hideLoading();
+            }
+        }
+
+        async function togglePromotion(id, isActive) {
+            try {
+                const resp = await fetch('@Url.Action("Toggle", "Promotion")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    window.showToast(result.message, 'success');
+                    const idx = allPromotions.findIndex(p => p.id === id);
+                    if (idx >= 0) { allPromotions[idx].isActive = isActive; renderTable(); }
+                } else {
+                    window.showToast(result.message, 'error');
+                    loadPromotions();
+                }
+            } catch (err) {
+                window.showToast('Không thể cập nhật trạng thái.', 'error');
+                loadPromotions();
+            }
+        }
+
+        async function deletePromotion(id) {
+            if (!confirm('Bạn có chắc chắn muốn xóa chương trình khuyến mãi này?')) return;
+            window.showLoading();
+            try {
+                const resp = await fetch('@Url.Action("Delete", "Promotion")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    window.showToast(result.message, 'success');
+                    loadPromotions();
+                } else {
+                    window.showToast(result.message, 'error');
+                }
+            } catch (err) {
+                window.showToast('Không thể xóa chương trình.', 'error');
+            } finally {
+                window.hideLoading();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadPromotions);
+    </script>
+
+    <script>
+        // =============================================
+        // Form Modal Logic
+        // =============================================
+        const promoModal = document.getElementById('promotionFormContainer');
+        let isEditMode = false;
+        let editPromoId = null;
+        let concessionCache = [];
+
+        async function loadConcessionDropdown() {
+            if (concessionCache.length > 0) return;
+            try {
+                const resp = await fetch('/api/concessions/dropdown?maxItems=200');
+                const data = await resp.json();
+                concessionCache = data || [];
+            } catch (err) {
+                console.error('Failed to load concessions', err);
+            }
+        }
+
+        function renderConcessionSelect(selectEl) {
+            selectEl.innerHTML = '<option value="">-- Chọn bắp nước --</option>' +
+                concessionCache.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+        }
+
+        function openCreateModal() {
+            isEditMode = false;
+            editPromoId = null;
+            document.getElementById('modalTitle').textContent = 'TẠO CHƯƠNG TRÌNH KHUYẾN MÃI';
+            document.getElementById('submitBtn').textContent = 'Lưu chương trình';
+            document.getElementById('promoId').value = '';
+            document.getElementById('promoName').value = '';
+            document.getElementById('promoDesc').value = '';
+            document.getElementById('promoPoster').value = '';
+            document.getElementById('promoDiscountType').value = '';
+            document.getElementById('promoDiscountForm').value = '';
+            document.getElementById('promoDiscountValue').value = '';
+            document.getElementById('promoMaxDiscountAmount').value = '';
+            document.getElementById('promoMaxDiscountPercentage').value = '';
+            document.getElementById('promoMaxUsage').value = '';
+            document.getElementById('promoStartDate').value = '';
+            document.getElementById('promoEndDate').value = '';
+            document.getElementById('conditionsList').innerHTML = '';
+            document.getElementById('freeItemsList').innerHTML = '';
+            document.getElementById('formError').classList.add('hidden');
+            onDiscountTypeChange();
+            onDiscountFormChange();
+            promoModal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+            loadConcessionDropdown();
+            promoModal.scrollTop = 0;
+        }
+
+        async function openEditModal(id) {
+            window.showLoading();
+            try {
+                const resp = await fetch('@Url.Action("Detail", "Promotion")/' + id);
+                if (!resp.ok) { window.showToast('Không tìm thấy chương trình.', 'error'); return; }
+                const detail = await resp.json();
+
+                isEditMode = true;
+                editPromoId = detail.id;
+                document.getElementById('modalTitle').textContent = 'CHỈNH SỬA CHƯƠNG TRÌNH KHUYẾN MÃI';
+                document.getElementById('submitBtn').textContent = 'Cập nhật chương trình';
+                document.getElementById('promoId').value = detail.id;
+                document.getElementById('promoName').value = detail.name || '';
+                document.getElementById('promoDesc').value = detail.description || '';
+                document.getElementById('promoPoster').value = detail.posterImage || '';
+                document.getElementById('promoDiscountType').value = detail.discountType || '';
+                document.getElementById('promoDiscountForm').value = detail.discountForm || '';
+                document.getElementById('promoDiscountValue').value = detail.discountValue || '';
+                document.getElementById('promoMaxDiscountAmount').value = detail.maxDiscountAmount || '';
+                document.getElementById('promoMaxDiscountPercentage').value = detail.maxDiscountPercentage || '';
+                document.getElementById('promoMaxUsage').value = detail.maxUsagePerCustomer || '';
+                document.getElementById('formError').classList.add('hidden');
+
+                if (detail.startDate) {
+                    document.getElementById('promoStartDate').value = new Date(detail.startDate).toISOString().slice(0, 16);
+                }
+                if (detail.endDate) {
+                    document.getElementById('promoEndDate').value = new Date(detail.endDate).toISOString().slice(0, 16);
+                }
+
+                document.getElementById('conditionsList').innerHTML = '';
+                if (detail.conditions && detail.conditions.length > 0) {
+                    detail.conditions.forEach(c => addConditionRow(c.conditionType, c.value, c.secondaryValue));
+                }
+
+                await loadConcessionDropdown();
+                document.getElementById('freeItemsList').innerHTML = '';
+                if (detail.freeConcessionItems && detail.freeConcessionItems.length > 0) {
+                    detail.freeConcessionItems.forEach(fi => addFreeItemRow(fi.concessionId, fi.quantity));
+                }
+
+                onDiscountTypeChange();
+                onDiscountFormChange();
+                promoModal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+            } catch (err) {
+                window.showToast('Không thể mở form chỉnh sửa.', 'error');
+            } finally {
+                window.hideLoading();
+            }
+        }
+
+        function closePromoModal() {
+            promoModal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        function onDiscountTypeChange() {
+            const dt = document.getElementById('promoDiscountType').value;
+            const detailsSection = document.getElementById('discountDetailsSection');
+            const freeItemsSection = document.getElementById('freeItemsSection');
+            if (dt === 'FreeConcession') {
+                detailsSection.classList.add('hidden');
+                freeItemsSection.classList.remove('hidden');
+            } else if (dt) {
+                detailsSection.classList.remove('hidden');
+                freeItemsSection.classList.add('hidden');
+            } else {
+                detailsSection.classList.add('hidden');
+                freeItemsSection.classList.add('hidden');
+            }
+        }
+
+        function onDiscountFormChange() {
+            const df = document.getElementById('promoDiscountForm').value;
+            document.getElementById('maxDiscountAmountField').classList.toggle('hidden', df !== 'Percentage');
+            document.getElementById('maxDiscountPctField').classList.toggle('hidden', df !== 'Fixed');
+        }
+
+        function addCondition() {
+            addConditionRow('', '', '');
+        }
+
+        function addConditionRow(conditionType, value, secondaryValue) {
+            const conditionsList = document.getElementById('conditionsList');
+            const row = document.createElement('div');
+            row.className = 'condition-row flex flex-wrap items-start gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/5';
+            row.innerHTML = `
+                <div class="flex-1 min-w-[160px]">
+                    <select class="condition-type w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-3 text-xs text-on-surface focus:outline-none focus:border-primary/50 transition-all" onchange="onConditionTypeChange(this)">
+                        <option value="">-- Loại điều kiện --</option>
+                        <option value="Age">Tuổi</option>
+                        <option value="BirthdayMonth">Tháng sinh nhật</option>
+                        <option value="MinOrderAmount">Giá trị đơn tối thiểu</option>
+                        <option value="MinTickets">Số vé tối thiểu</option>
+                        <option value="SeatType">Loại ghế</option>
+                        <option value="Gender">Giới tính</option>
+                        <option value="Format">Định dạng phim</option>
+                        <option value="CustomerTier">Hạng thành viên</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2 flex-1 min-w-[200px]">
+                    <input type="text" class="condition-value w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-3 text-xs text-on-surface focus:outline-none focus:border-primary/50 transition-all" placeholder="Giá trị" />
+                    <input type="text" class="condition-secondary hidden w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-3 text-xs text-on-surface focus:outline-none focus:border-primary/50 transition-all" placeholder="Đến" />
+                </div>
+                <button type="button" onclick="this.closest('.condition-row').remove()" class="p-2 rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all shrink-0">
+                    <span class="material-symbols-outlined text-lg">close</span>
+                </button>`;
+            const typeSelect = row.querySelector('.condition-type');
+            const valueInput = row.querySelector('.condition-value');
+            const secondaryInput = row.querySelector('.condition-secondary');
+            typeSelect.value = conditionType || '';
+            valueInput.value = value || '';
+            if (secondaryValue) secondaryInput.value = secondaryValue;
+            conditionsList.appendChild(row);
+            onConditionTypeChange(typeSelect);
+        }
+
+        function onConditionTypeChange(selectEl) {
+            const row = selectEl.closest('.condition-row');
+            const valueInput = row.querySelector('.condition-value');
+            const secondaryInput = row.querySelector('.condition-secondary');
+            const ct = selectEl.value;
+            secondaryInput.classList.add('hidden');
+            valueInput.type = 'text';
+            valueInput.placeholder = 'Giá trị';
+            if (ct === 'Age') { valueInput.placeholder = 'Từ (tuổi)'; secondaryInput.classList.remove('hidden'); secondaryInput.placeholder = 'Đến (tuổi)'; valueInput.type = 'number'; secondaryInput.type = 'number'; }
+            else if (ct === 'BirthdayMonth') { valueInput.placeholder = 'Tháng (1-12)'; valueInput.type = 'number'; }
+            else if (ct === 'MinOrderAmount') { valueInput.placeholder = 'Số tiền tối thiểu (VNĐ)'; valueInput.type = 'number'; }
+            else if (ct === 'MinTickets') { valueInput.placeholder = 'Số vé tối thiểu'; valueInput.type = 'number'; }
+            else if (ct === 'SeatType') { valueInput.placeholder = 'Ví dụ: Standard, VIP, Couple'; }
+            else if (ct === 'Gender') { valueInput.placeholder = 'Ví dụ: Male, Female, Other'; }
+            else if (ct === 'Format') { valueInput.placeholder = 'Ví dụ: 2D, 3D, IMAX, 4DX'; }
+            else if (ct === 'CustomerTier') { valueInput.placeholder = 'Ví dụ: Silver, Gold, Platinum'; }
+        }
+
+        function addFreeItem() {
+            addFreeItemRow('', 1);
+        }
+
+        async function addFreeItemRow(concessionId, quantity) {
+            await loadConcessionDropdown();
+            const freeItemsList = document.getElementById('freeItemsList');
+            const row = document.createElement('div');
+            row.className = 'free-item-row flex items-center gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/5';
+            row.innerHTML = `
+                <div class="flex-1 min-w-[200px]">
+                    <select class="free-item-concession w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-3 text-xs text-on-surface focus:outline-none focus:border-primary/50 transition-all">
+                    </select>
+                </div>
+                <div class="w-24">
+                    <input type="number" class="free-item-quantity w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-3 text-xs text-on-surface focus:outline-none focus:border-primary/50 transition-all" min="1" value="${quantity || 1}" placeholder="SL" />
+                </div>
+                <button type="button" onclick="this.closest('.free-item-row').remove()" class="p-2 rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all shrink-0">
+                    <span class="material-symbols-outlined text-lg">close</span>
+                </button>`;
+            const selectEl = row.querySelector('.free-item-concession');
+            renderConcessionSelect(selectEl);
+            if (concessionId) selectEl.value = concessionId;
+            freeItemsList.appendChild(row);
+        }
+
+        // Form submit
+        document.getElementById('promotionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const errorDiv = document.getElementById('formError');
+            errorDiv.classList.add('hidden');
+
+            const name = document.getElementById('promoName').value.trim();
+            const discountType = document.getElementById('promoDiscountType').value;
+            const startDate = document.getElementById('promoStartDate').value;
+            const endDate = document.getElementById('promoEndDate').value;
+
+            if (!name) { errorDiv.textContent = 'Vui lòng nhập tên chương trình.'; errorDiv.classList.remove('hidden'); return; }
+            if (!discountType) { errorDiv.textContent = 'Vui lòng chọn loại giảm giá.'; errorDiv.classList.remove('hidden'); return; }
+            if (!startDate) { errorDiv.textContent = 'Vui lòng chọn ngày bắt đầu.'; errorDiv.classList.remove('hidden'); return; }
+            if (!endDate) { errorDiv.textContent = 'Vui lòng chọn ngày kết thúc.'; errorDiv.classList.remove('hidden'); return; }
+            if (new Date(startDate) >= new Date(endDate)) { errorDiv.textContent = 'Ngày bắt đầu phải trước ngày kết thúc.'; errorDiv.classList.remove('hidden'); return; }
+
+            const conditions = [];
+            document.querySelectorAll('#conditionsList .condition-row').forEach(row => {
+                const ct = row.querySelector('.condition-type').value;
+                if (!ct) return;
+                const val = row.querySelector('.condition-value').value.trim();
+                const secVal = row.querySelector('.condition-secondary').value.trim();
+                conditions.push({ conditionType: ct, value: val || null, secondaryValue: secVal || null, id: null });
+            });
+
+            const freeItems = [];
+            if (discountType === 'FreeConcession') {
+                document.querySelectorAll('#freeItemsList .free-item-row').forEach(row => {
+                    const cid = row.querySelector('.free-item-concession').value;
+                    const qty = parseInt(row.querySelector('.free-item-quantity').value) || 1;
+                    if (cid) freeItems.push({ concessionId: cid, quantity: qty, id: null });
+                });
+                if (freeItems.length === 0) {
+                    errorDiv.textContent = 'Vui lòng thêm ít nhất một món bắp nước miễn phí.';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+            }
+
+            const discountForm = discountType !== 'FreeConcession' ? document.getElementById('promoDiscountForm').value : null;
+            const discountValue = discountType !== 'FreeConcession' ? (parseFloat(document.getElementById('promoDiscountValue').value) || 0) : 0;
+
+            if (discountType !== 'FreeConcession') {
+                if (!discountForm) { errorDiv.textContent = 'Vui lòng chọn hình thức giảm giá.'; errorDiv.classList.remove('hidden'); return; }
+                if (discountValue <= 0) { errorDiv.textContent = 'Giá trị giảm phải lớn hơn 0.'; errorDiv.classList.remove('hidden'); return; }
+            }
+
+            const body = {
+                name: name,
+                description: document.getElementById('promoDesc').value.trim() || null,
+                posterImage: document.getElementById('promoPoster').value.trim() || null,
+                startDate: new Date(startDate).toISOString(),
+                endDate: new Date(endDate).toISOString(),
+                discountType: discountType,
+                discountForm: discountForm,
+                discountValue: discountValue,
+                maxDiscountAmount: document.getElementById('promoMaxDiscountAmount').value ? parseFloat(document.getElementById('promoMaxDiscountAmount').value) : null,
+                maxDiscountPercentage: document.getElementById('promoMaxDiscountPercentage').value ? parseFloat(document.getElementById('promoMaxDiscountPercentage').value) : null,
+                maxUsagePerCustomer: document.getElementById('promoMaxUsage').value ? parseInt(document.getElementById('promoMaxUsage').value) : null,
+                conditions: conditions,
+                freeConcessionItems: freeItems
+            };
+
+            if (isEditMode) body.id = editPromoId;
+
+            const url = isEditMode
+                ? '@Url.Action("Edit", "Promotion")'
+                : '@Url.Action("Create", "Promotion")';
+
+            window.showLoading();
+            try {
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    window.showToast(result.message, 'success');
+                    closePromoModal();
+                    loadPromotions();
+                } else {
+                    errorDiv.textContent = result.message || 'Đã có lỗi xảy ra.';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Không thể kết nối đến máy chủ.';
+                errorDiv.classList.remove('hidden');
+            } finally {
+                window.hideLoading();
+            }
+        });
+    </script>
+}

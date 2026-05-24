@@ -1,0 +1,127 @@
+<div id="promotionFormContainer" class="hidden fixed inset-0 z-[100] overflow-y-auto">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="closePromoModal()"></div>
+    <div class="relative z-10 flex min-h-full items-start justify-center p-4 pt-10 pb-20">
+        <div class="w-full max-w-6xl animate-in zoom-in-95 duration-200">
+            <div class="overflow-hidden rounded-3xl border border-white/10 bg-surface-container-highest shadow-2xl">
+                <div class="bg-gradient-to-r from-primary/20 to-transparent px-8 py-6 border-b border-white/5 flex items-center justify-between">
+                    <div>
+                        <h3 id="modalTitle" class="font-headline text-xl font-bold text-on-surface">TẠO CHƯƠNG TRÌNH KHUYẾN MÃI</h3>
+                        <p class="text-xs text-on-surface-variant mt-1">Thiết lập chương trình khuyến mãi tự động áp dụng khi khách hàng đặt vé.</p>
+                    </div>
+                    <button onclick="closePromoModal()" class="p-2 rounded-lg text-slate-400 hover:bg-white/5 transition-colors">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                <form id="promotionForm" class="p-8 space-y-8" onsubmit="return false;">
+                    <input type="hidden" id="promoId" />
+
+                    <div class="space-y-4">
+                        <h4 class="font-headline text-sm font-bold text-slate-300 uppercase tracking-widest border-b border-white/5 pb-2">Thông tin cơ bản</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Tên chương trình <span class="text-red-400">*</span></label>
+                                <input type="text" id="promoName" required class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" placeholder="Ví dụ: Khuyến mãi hè 2026" />
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Ảnh poster (URL)</label>
+                                <input type="url" id="promoPoster" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" placeholder="https://..." />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Mô tả</label>
+                            <textarea id="promoDesc" rows="3" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" placeholder="Mô tả ngắn về chương trình khuyến mãi..."></textarea>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Ngày bắt đầu <span class="text-red-400">*</span></label>
+                                <input type="datetime-local" id="promoStartDate" required class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all [color-scheme:dark]" />
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Ngày kết thúc <span class="text-red-400">*</span></label>
+                                <input type="datetime-local" id="promoEndDate" required class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all [color-scheme:dark]" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <h4 class="font-headline text-sm font-bold text-slate-300 uppercase tracking-widest border-b border-white/5 pb-2">Hình thức khuyến mãi</h4>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Loại giảm giá <span class="text-red-400">*</span></label>
+                            <select id="promoDiscountType" required class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" onchange="onDiscountTypeChange()">
+                                <option value="">-- Chọn loại --</option>
+                                <option value="OrderTotal">Tổng hóa đơn</option>
+                                <option value="Concession">Bắp nước</option>
+                                <option value="TicketOnly">Chỉ vé</option>
+                                <option value="FreeConcession">Tặng bắp nước miễn phí</option>
+                            </select>
+                        </div>
+
+                        <div id="discountDetailsSection" class="space-y-4 hidden">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Hình thức <span class="text-red-400">*</span></label>
+                                    <select id="promoDiscountForm" required class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" onchange="onDiscountFormChange()">
+                                        <option value="">-- Chọn --</option>
+                                        <option value="Percentage">Phần trăm (%)</option>
+                                        <option value="Fixed">Cố định (VNĐ)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Giá trị <span class="text-red-400">*</span></label>
+                                    <input type="number" id="promoDiscountValue" min="0.01" step="0.01" required class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" placeholder="0" />
+                                </div>
+                                <div id="maxDiscountAmountField" class="hidden">
+                                    <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Giảm tối đa (VNĐ)</label>
+                                    <input type="number" id="promoMaxDiscountAmount" min="0" step="1" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" placeholder="Không giới hạn" />
+                                </div>
+                                <div id="maxDiscountPctField" class="hidden">
+                                    <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Giảm tối đa (%)</label>
+                                    <input type="number" id="promoMaxDiscountPercentage" min="0" max="100" step="0.01" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" placeholder="Không giới hạn" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="freeItemsSection" class="space-y-4 hidden">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Bắp nước miễn phí</span>
+                                <button type="button" onclick="addFreeItem()" class="inline-flex items-center gap-1 rounded-lg bg-primary/10 border border-primary/20 px-3 py-1.5 text-[10px] font-bold uppercase text-primary hover:bg-primary/20 transition-colors">
+                                    <span class="material-symbols-outlined text-sm">add</span>
+                                    Thêm món
+                                </button>
+                            </div>
+                            <div id="freeItemsList" class="space-y-3"></div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <h4 class="font-headline text-sm font-bold text-slate-300 uppercase tracking-widest border-b border-white/5 pb-2">Điều kiện áp dụng</h4>
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Danh sách điều kiện</span>
+                            <button type="button" onclick="addCondition()" class="inline-flex items-center gap-1 rounded-lg bg-primary/10 border border-primary/20 px-3 py-1.5 text-[10px] font-bold uppercase text-primary hover:bg-primary/20 transition-colors">
+                                <span class="material-symbols-outlined text-sm">add</span>
+                                Thêm điều kiện
+                            </button>
+                        </div>
+                        <div id="conditionsList" class="space-y-3"></div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <h4 class="font-headline text-sm font-bold text-slate-300 uppercase tracking-widest border-b border-white/5 pb-2">Giới hạn sử dụng</h4>
+                        <div class="max-w-xs">
+                            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Số lần tối đa / khách hàng</label>
+                            <input type="number" id="promoMaxUsage" min="1" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" placeholder="Để trống = không giới hạn" />
+                        </div>
+                    </div>
+
+                    <div id="formError" class="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-200 hidden"></div>
+
+                    <div class="flex gap-3 pt-4 border-t border-white/5">
+                        <button type="button" onclick="closePromoModal()" class="flex-1 py-3 rounded-xl border border-white/10 font-headline text-xs font-bold uppercase tracking-widest text-slate-400 hover:bg-white/5 transition-all">Hủy</button>
+                        <button type="submit" id="submitBtn" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-primary-container font-headline text-xs font-bold uppercase tracking-widest text-on-primary shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">Lưu chương trình</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
