@@ -1,4 +1,5 @@
 using CinemaTicketBooking.Domain;
+using CinemaTicketBooking.Domain.Enums;
 using CinemaTicketBooking.Application.Common.Auth;
 using CinemaTicketBooking.Infrastructure.Auth;
 using Microsoft.AspNetCore.Identity;
@@ -67,6 +68,19 @@ public class DataSeeder(
     public static readonly Guid CustomerCouponId1 = new("00000000-0000-0000-0000-000000090001");
     public static readonly Guid CustomerCouponId2 = new("00000000-0000-0000-0000-000000090002");
 
+    // =============================================
+    // Promotion Seeding — Fixed IDs
+    // =============================================
+    public static readonly Guid PromotionProgramId1 = new("a1000000-0000-0000-0000-000000000001");
+    public static readonly Guid PromotionProgramId2 = new("a1000000-0000-0000-0000-000000000002");
+    public static readonly Guid PromotionProgramId3 = new("a1000000-0000-0000-0000-000000000003");
+    public static readonly Guid PromotionProgramId4 = new("a1000000-0000-0000-0000-000000000004");
+    public static readonly Guid PromotionProgramId5 = new("a1000000-0000-0000-0000-000000000005");
+
+    public static readonly Guid SlidePromoId1 = new("b2000000-0000-0000-0000-000000000001");
+    public static readonly Guid SlidePromoId2 = new("b2000000-0000-0000-0000-000000000002");
+    public static readonly Guid SlidePromoId3 = new("b2000000-0000-0000-0000-000000000003");
+
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
@@ -134,6 +148,9 @@ public class DataSeeder(
             await dbContext.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Seeded customer coupons successfully.");
         }
+
+        // 6. Ensure promotion programs exist.
+        await SeedPromotionsAsync(cancellationToken);
     }
 
     // =============================================
@@ -355,6 +372,130 @@ public class DataSeeder(
         return [cc1, cc2];
     }
 
+    // =============================================
+    // Promotion Seeding
+    // =============================================
+
+    private async Task SeedPromotionsAsync(CancellationToken cancellationToken)
+    {
+        if (await dbContext.PromotionPrograms.AnyAsync(cancellationToken))
+            return;
+
+        // --- Promotion 1: Summer Blockbuster ---
+        var promo1 = PromotionProgram.Create(
+            "ƯU ĐÃI MÙA HÈ",
+            "Giảm 20% tổng đơn cho khách hàng 16-22 tuổi",
+            "https://m.touchcinema.com/storage/01-2019/1440x720-1.png",
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow.AddMonths(1),
+            PromotionDiscountType.OrderTotal,
+            DiscountForm.Percentage,
+            20m,
+            50000m,
+            null,
+            null);
+        promo1.GetType().GetProperty("Id")?.SetValue(promo1, PromotionProgramId1);
+        promo1.AddCondition(PromotionCondition.Create(PromotionProgramId1, ConditionType.Age, "18", "35"));
+
+        // --- Promotion 2: Birthday Special ---
+        var promo2 = PromotionProgram.Create(
+            "Birthday Special",
+            "Giảm 30.000đ cho vé xem phim trong tháng sinh nhật",
+            null,
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow.AddMonths(1),
+            PromotionDiscountType.TicketOnly,
+            DiscountForm.Fixed,
+            30000m,
+            null,
+            50m,
+            1);
+        promo2.GetType().GetProperty("Id")?.SetValue(promo2, PromotionProgramId2);
+        promo2.AddCondition(PromotionCondition.Create(PromotionProgramId2, ConditionType.BirthdayMonth, DateTimeOffset.UtcNow.Month.ToString(), null));
+
+        // --- Promotion 3: Family Pack ---
+        var promo3 = PromotionProgram.Create(
+            "Family Pack",
+            "Tặng 1 bắp + 1 nước khi mua từ 3 vé",
+            null,
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow.AddMonths(1),
+            PromotionDiscountType.FreeConcession,
+            null,
+            0m,
+            null,
+            null,
+            null);
+        promo3.GetType().GetProperty("Id")?.SetValue(promo3, PromotionProgramId3);
+        promo3.AddCondition(PromotionCondition.Create(PromotionProgramId3, ConditionType.MinTickets, "3", null));
+        promo3.AddFreeConcessionItem(PromotionFreeConcessionItem.Create(PromotionProgramId3, ConcessionId1, 1));
+        promo3.AddFreeConcessionItem(PromotionFreeConcessionItem.Create(PromotionProgramId3, ConcessionId2, 1));
+
+        // --- Promotion 4: VIP Experience ---
+        var promo4 = PromotionProgram.Create(
+            "VIP Experience",
+            "Giảm 15% bắp nước cho ghế VIP, tối đa 30.000đ",
+            null,
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow.AddMonths(1),
+            PromotionDiscountType.Concession,
+            DiscountForm.Percentage,
+            15m,
+            30000m,
+            null,
+            null);
+        promo4.GetType().GetProperty("Id")?.SetValue(promo4, PromotionProgramId4);
+        promo4.AddCondition(PromotionCondition.Create(PromotionProgramId4, ConditionType.SeatType, "VIP", null));
+
+        // --- Promotion 5: Flash Sale 50% (global, no conditions, unlimited) ---
+        var promo5 = PromotionProgram.Create(
+            "Flash Sale 50%",
+            "Giảm 50% tổng vé - áp dụng cho tất cả khách hàng, không giới hạn",
+            "https://img.freepik.com/free-vector/3d-style-upto-50-percent-off-sale-background-business-promo_1017-61377.jpg?semt=ais_hybrid&w=740&q=80",
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow.AddMonths(1),
+            PromotionDiscountType.OrderTotal,
+            DiscountForm.Percentage,
+            50m,
+            null,
+            null,
+            null); // unlimited usage
+        promo5.GetType().GetProperty("Id")?.SetValue(promo5, PromotionProgramId5);
+        // No conditions = global promotion, matches all bookings
+
+        dbContext.PromotionPrograms.AddRange(promo1, promo2, promo3, promo4, promo5);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Seeded promotion programs successfully.");
+
+        // --- Linked Slides ---
+        if (!await dbContext.Slides.AnyAsync(s => s.Id == SlidePromoId1 || s.Id == SlidePromoId2, cancellationToken))
+        {
+            var slidePromo1 = Slide.Create(
+                promo1.Name,
+                promo1.Description ?? "",
+                promo1.PosterImage ?? "https://m.touchcinema.com/storage/01-2019/1440x720-1.png",
+                $"/promos/{PromotionProgramId1}",
+                10,
+                SlideType.Event,
+                null);
+            slidePromo1.GetType().GetProperty("Id")?.SetValue(slidePromo1, SlidePromoId1);
+
+            var slidePromo2 = Slide.Create(
+                promo5.Name,
+                promo5.Description ?? "",
+                promo5.PosterImage ?? "/images/promo-default.jpg",
+                $"/promos/{PromotionProgramId5}",
+                11,
+                SlideType.Event,
+                null);
+            slidePromo2.GetType().GetProperty("Id")?.SetValue(slidePromo2, SlidePromoId2);
+
+            dbContext.Slides.AddRange(slidePromo1, slidePromo2);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            logger.LogInformation("Seeded promotion slides successfully.");
+        }
+    }
+
     private static List<Cinema> SeedCinemas()
     {
         var cinema1 = Cinema.Create(
@@ -406,7 +547,6 @@ public class DataSeeder(
             Slide.Create("MORTAL KOMBAT II", "Cuộc chiến sinh tử tiếp tục bùng nổ với những võ sĩ huyền thoại.", "https://image.tmdb.org/t/p/w780/xqk38PWupGGQoKpRxJTYvwwj6Ar.jpg", "/movies", 1, SlideType.ShowingMovie, "https://www.youtube.com/watch?v=TcMBFSGVi1c"),
             Slide.Create("DORAEMON MOVIE 45", "Tân Nobita và lâu đài dưới đáy biển - Hành trình khám phá đại dương kỳ ảo.", "https://cdn2.tuoitre.vn/zoom/700_525/471584752817336320/2025/9/9/doraemon-1-scaled-175740409238553596678-0-28-1318-2545-crop-17574041212811388695632.jpg", "/movies", 2, SlideType.UpcomingMovie),
             Slide.Create("LỄ HỘI PHIM:CIBEF 2026", "Tham gia ngay lễ hội phim quốc tế lớn nhất năm tại Absolute Cinema.", "https://thethaovanhoa.mediacdn.vn/372676912336973824/2026/4/20/anh-chup-man-hinh-2026-04-20-104403-177665715282833172379.png", "/promos/cibef-2026", 3, SlideType.Event),
-            Slide.Create("ƯU ĐÃI MÙA HÈ", "Giảm giá bắp và nước ngọt trong suốt mùa hè cho học sinh - sinh viên.", "https://m.touchcinema.com/storage/01-2019/1440x720-1.png", "/promos/cibef-2026", 4, SlideType.Event),
             Slide.Create("SHIN - CẬU BÉ BÚT CHÌ", "Quậy tung Vương quốc Nguệch ngoạc cùng 4 dũng sĩ bất ổn.", "https://media.lottecinemavn.com/Media/MovieFile/MovieImg/202604/12192_105_100001.jpg", "/movies", 5, SlideType.ShowingMovie, "https://www.youtube.com/watch?v=JfVOs4VSpmA"),
         ];
     }
