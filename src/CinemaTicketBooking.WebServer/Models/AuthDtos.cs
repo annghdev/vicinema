@@ -25,3 +25,6 @@ public sealed record ResetPasswordRequest(Guid UserId, string Code, string NewPa
 public sealed record DeleteAccountRequest(string Password);
 
 public sealed record LockAccountRequest(DateTimeOffset? LockoutEndUtc);
+
+public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+

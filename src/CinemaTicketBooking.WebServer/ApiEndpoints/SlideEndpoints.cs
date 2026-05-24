@@ -8,6 +8,7 @@ public static class SlideEndpoints
     public static void MapSlideEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/slides")
+            .RequireRateLimiting("fixed")
             .WithTags("Slides")
             .AllowAnonymous();
 
@@ -18,4 +19,5 @@ public static class SlideEndpoints
         });
     }
 }
+
 

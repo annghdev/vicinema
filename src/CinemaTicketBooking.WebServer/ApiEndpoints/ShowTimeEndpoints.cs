@@ -17,6 +17,7 @@ public static class ShowTimeEndpoints
     public static void MapShowTimeEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/showtimes")
+            .RequireRateLimiting("fixed")
             .WithTags("ShowTimes")
             .AllowAnonymous();
 
@@ -234,3 +235,4 @@ public sealed class ValidateSeatSelectionRequest
     public List<Guid> SelectedTicketIds { get; set; } = [];
     public string CustomerSessionId { get; set; } = string.Empty;
 }
+

@@ -5,7 +5,7 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets showtimes for dropdown data source.
 /// </summary>
-public class GetShowTimeDropdownQuery : IQuery<IReadOnlyList<ShowTimeDropdownDto>>
+public class GetShowTimeDropdownQuery : ICachableQuery<IReadOnlyList<ShowTimeDropdownDto>>
 {
     public Guid? CinemaId { get; set; }
     public Guid? MovieId { get; set; }
@@ -13,6 +13,8 @@ public class GetShowTimeDropdownQuery : IQuery<IReadOnlyList<ShowTimeDropdownDto
     public ShowTimeStatus? Status { get; set; }
     public int MaxItems { get; set; } = 100;
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => ShowTimeCacheKeys.GetShowTimeDropdown(CinemaId, MovieId, ScreenId, Status, MaxItems);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>

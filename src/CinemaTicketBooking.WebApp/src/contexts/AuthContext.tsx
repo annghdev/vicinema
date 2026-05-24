@@ -57,8 +57,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
       )
       profileSyncTokenRef.current = nextState.session.accessToken
       setAuthState(nextState)
-    } catch {
-      // Keep existing local profile when profile endpoint is unavailable.
+    } catch (err: unknown) {
+      // If the server returned 401 after the httpClient interceptor already
+      // attempted a token refresh, the session is truly expired → force logout.
+      if (
+        err &&
+        typeof err === "object" &&
+        "response" in err &&
+        (err as { response?: { status?: number } }).response?.status === 401
+      ) {
+        clearAuthState()
+        setAuthState(null)
+        return
+      }
+      // Keep existing local profile when profile endpoint is unavailable for other reasons.
     } finally {
       setIsResolvingProfile(false)
     }

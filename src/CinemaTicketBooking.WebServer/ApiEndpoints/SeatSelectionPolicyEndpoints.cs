@@ -9,6 +9,7 @@ public static class SeatSelectionPolicyEndpoints
     public static void MapSeatSelectionPolicyEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/seat-selection-policies")
+            .RequireRateLimiting("fixed")
             .WithTags("SeatSelectionPolicies")
             .AllowAnonymous();
 
@@ -72,3 +73,4 @@ public static class SeatSelectionPolicyEndpoints
         return Results.NoContent();
     }
 }
+

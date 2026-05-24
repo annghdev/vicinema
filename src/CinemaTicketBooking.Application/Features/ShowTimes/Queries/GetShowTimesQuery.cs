@@ -5,7 +5,7 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets showtimes with optional filters.
 /// </summary>
-public class GetShowTimesQuery : IQuery<IReadOnlyList<ShowTimeDto>>
+public class GetShowTimesQuery : ICachableQuery<IReadOnlyList<ShowTimeDto>>
 {
     public Guid? CinemaId { get; set; }
     public Guid? MovieId { get; set; }
@@ -13,6 +13,8 @@ public class GetShowTimesQuery : IQuery<IReadOnlyList<ShowTimeDto>>
     public ShowTimeStatus? Status { get; set; }
     public DateOnly? Date { get; set; }
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => ShowTimeCacheKeys.GetShowTimes(CinemaId, MovieId, ScreenId, Status, Date);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>

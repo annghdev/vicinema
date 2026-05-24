@@ -1,10 +1,12 @@
 import { isAxiosError } from "axios"
 import type { HubConnection } from "@microsoft/signalr"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom"
-import { cancelBooking, createBooking, retryPayment } from "../apis/bookingApi"
+import { cancelBooking, createBooking, previewPricing, retryPayment } from "../apis/bookingApi"
 import { getConcessions } from "../apis/concessionApi"
 import { connectPaymentHub } from "../apis/paymentRealtime"
+import { getMyCoupons, verifyCoupon } from "../apis/couponApi"
+import { getActivePromotions } from "../apis/promotionApi"
 import { PaymentQRModal } from "../components/PaymentQRModal"
 import { getAvailableGateways, getFakePaymentSuccess } from "../apis/paymentApi"
 import { getShowTimeById } from "../apis/showtimeApi"
@@ -13,8 +15,10 @@ import { getOrCreateCustomerSessionId } from "../lib/customerSessionId"
 import { useAuth } from "../contexts/AuthContext"
 import { useToast } from "../contexts/ToastContext"
 import type { ShowTimeDetailDto, ShowTimeTicketDto } from "../types/ShowTime"
-import type { CreateBookingResponse } from "../types/Booking"
+import type { CreateBookingResponse, PreviewPricingResponse } from "../types/Booking"
 import type { ConcessionDto } from "../types/Concession"
+import type { CustomerCouponDto } from "../types/Coupon"
+import type { AppliedPromotionDto, FreeConcessionItemDto, PromotionProgramDto } from "../types/Promotion"
 import { isRedirectBehavior, type PaymentConfirmedRealtimeEvent, type PaymentGatewayOptionDto, type VerifyPaymentResponse } from "../types/Payment"
 
 type CheckoutLocationState = {
@@ -117,6 +121,24 @@ function Checkout() {
   const [postBooking, setPostBooking] = useState<CreateBookingResponse | null>(null)
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
 
+  // ═══════════════════════════════════════════════════════════
+  // Coupon state
+  // ═══════════════════════════════════════════════════════════
+  const [availableCoupons, setAvailableCoupons] = useState<CustomerCouponDto[]>([])
+  const [couponCodeInput, setCouponCodeInput] = useState("")
+  const [verifyingCoupon, setVerifyingCoupon] = useState(false)
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null)
+  const [couponError, setCouponError] = useState<string | null>(null)
+  const [selectedPersonalCoupon, setSelectedPersonalCoupon] = useState<string | null>(null)
+
+  // ═══════════════════════════════════════════════════════════
+  // Promotion state
+  // ═══════════════════════════════════════════════════════════
+  const [appliedPromotions, setAppliedPromotions] = useState<AppliedPromotionDto[]>([])
+  const [freeItems, setFreeItems] = useState<FreeConcessionItemDto[]>([])
+  const [promotionDiscountAmount, setPromotionDiscountAmount] = useState(0)
+  const [availablePromotions, setAvailablePromotions] = useState<PromotionProgramDto[]>([])
+
   const backToSeatSelectionPath = showtimeId ? `/showtimes/${showtimeId}/seats` : "/showtimes"
 
   useEffect(() => {
@@ -176,6 +198,30 @@ function Checkout() {
     }
   }, [showtimeId, locState])
 
+  // Load customer's available coupons
+  useEffect(() => {
+    if (!showtimeId) return
+    let cancelled = false
+    async function loadCoupons() {
+      try {
+        const coupons = await getMyCoupons()
+        if (!cancelled) {
+          setAvailableCoupons(coupons.filter((c) => !c.isUsed))
+        }
+      } catch {
+        // non-critical
+      }
+    }
+    void loadCoupons()
+    return () => { cancelled = true }
+  }, [showtimeId])
+
+  useEffect(() => {
+    getActivePromotions().then((data) => {
+      setAvailablePromotions(data)
+    }).catch(() => {})
+  }, [])
+
   const isPostPayQrFlow = useMemo(
     () => postBooking && isRedirectBehavior(postBooking.redirectBehavior) !== "Redirect",
     [postBooking],
@@ -224,6 +270,96 @@ function Checkout() {
   )
 
   const totalAmount = ticketsSubtotal + concessionSubtotal
+
+  // ═══════════════════════════════════════════════════════════
+  // Preview pricing — debounced call to server for discount display
+  // ═══════════════════════════════════════════════════════════
+  const [previewData, setPreviewData] = useState<PreviewPricingResponse | null>(null)
+  const previewTimerRef = useRef<ReturnType<typeof setTimeout>>()
+
+  useEffect(() => {
+    if (previewTimerRef.current) clearTimeout(previewTimerRef.current)
+    setPreviewData(null)
+
+    if (!showtimeId || selectedTicketIds.length === 0) {
+      return
+    }
+
+    previewTimerRef.current = setTimeout(() => {
+      const concessionsList = Object.entries(concessionQty)
+        .filter(([, qty]) => qty > 0)
+        .map(([id, qty]) => ({ concessionId: id, quantity: qty }))
+
+      previewPricing({
+        showTimeId: showtimeId,
+        customerSessionId: getOrCreateCustomerSessionId(),
+        customerName: customerName.trim() || "Guest",
+        customerEmail: customerEmail.trim() || "guest@example.com",
+        customerPhoneNumber: customerPhone.trim() || "0000000000",
+        selectedTicketIds: selectedTicketIds,
+        concessions: concessionsList,
+      })
+        .then((data) => {
+          setPreviewData(data)
+          setAppliedPromotions(data.appliedPromotions || [])
+          setFreeItems(data.freeItems || [])
+          setPromotionDiscountAmount(data.promotionDiscountAmount || 0)
+        })
+        .catch(() => setPreviewData(null))
+    }, 600)
+
+    return () => {
+      if (previewTimerRef.current) clearTimeout(previewTimerRef.current)
+    }
+  }, [showtimeId, selectedTicketIds, concessionQty, customerName, customerEmail, customerPhone])
+
+  // Re-trigger preview when coupon changes
+  useEffect(() => {
+    if (previewTimerRef.current) clearTimeout(previewTimerRef.current)
+    setPreviewData(null)
+
+    if (!showtimeId || selectedTicketIds.length === 0) {
+      return
+    }
+
+    const effectiveCouponCode = selectedPersonalCoupon || appliedCoupon || undefined
+
+    previewTimerRef.current = setTimeout(() => {
+      const concessionsList = Object.entries(concessionQty)
+        .filter(([, qty]) => qty > 0)
+        .map(([id, qty]) => ({ concessionId: id, quantity: qty }))
+
+      previewPricing({
+        showTimeId: showtimeId,
+        customerSessionId: getOrCreateCustomerSessionId(),
+        customerName: customerName.trim() || "Guest",
+        customerEmail: customerEmail.trim() || "guest@example.com",
+        customerPhoneNumber: customerPhone.trim() || "0000000000",
+        selectedTicketIds: selectedTicketIds,
+        concessions: concessionsList,
+        couponCode: effectiveCouponCode,
+      })
+        .then((data) => {
+          setPreviewData(data)
+          setAppliedPromotions(data.appliedPromotions || [])
+          setFreeItems(data.freeItems || [])
+          setPromotionDiscountAmount(data.promotionDiscountAmount || 0)
+        })
+        .catch(() => setPreviewData(null))
+    }, 600)
+
+    return () => {
+      if (previewTimerRef.current) clearTimeout(previewTimerRef.current)
+    }
+  }, [showtimeId, selectedTicketIds, concessionQty, customerName, customerEmail, customerPhone, selectedPersonalCoupon, appliedCoupon])
+
+  // Derive the amounts to display (preview values if available, otherwise origin).
+  const displayOriginAmount = previewData?.originAmount ?? totalAmount
+  const displayFinalAmount = previewData?.finalAmount ?? totalAmount
+  const displayTotalDiscount = previewData?.totalDiscount ?? 0
+  const displayLoyaltyDiscount = (previewData?.ticketDiscount ?? 0) + (previewData?.concessionDiscount ?? 0)
+  const hasDiscount = (previewData?.isRegisteredCustomer === true || (previewData?.appliedPromotions?.length ?? 0) > 0) && displayTotalDiscount > 0
+  const hasCouponDiscount = (previewData?.couponDiscountAmount ?? 0) > 0
 
   const setQty = useCallback((concessionId: string, next: number) => {
     setConcessionQty((prev) => {
@@ -276,10 +412,10 @@ function Checkout() {
           concessionId: l.concession.id,
           quantity: l.quantity,
         })),
-        discountAmount: 0,
         paymentMethod: selectedPaymentMethod,
         returnUrl,
         ipAddress: "127.0.0.1",
+        couponCode: selectedPersonalCoupon || appliedCoupon || undefined,
       })
 
       if (showtimeId) {
@@ -334,9 +470,11 @@ function Checkout() {
           quantity: l.quantity,
           amount: l.lineTotal,
         })),
+        appliedPromotions: postBooking?.appliedPromotions ?? [],
+        freeItems: postBooking?.freeItems ?? [],
       },
     } : undefined)
-  }, [navigate, showtime?.movieName, showtime?.screenCode, showtime?.startAt, showtime?.cinemaName, selectedTickets, postBooking?.finalAmount, concessionLines])
+  }, [navigate, showtime?.movieName, showtime?.screenCode, showtime?.startAt, showtime?.cinemaName, selectedTickets, postBooking?.finalAmount, postBooking?.appliedPromotions, postBooking?.freeItems, concessionLines])
 
   const onPaymentConfirmedRealtime = useCallback((event: PaymentConfirmedRealtimeEvent) => {
     setModalError(null)
@@ -538,6 +676,23 @@ function Checkout() {
           <p className="text-on-surface-variant">Hoàn tất đặt vé để có trải nghiệm điện ảnh khó quên.</p>
         </div>
 
+        {availablePromotions.length > 0 && (
+          <div className="rounded-lg border border-outline-variant/20 bg-surface-container-low p-4">
+            <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-secondary">
+              <span className="material-symbols-outlined text-base">campaign</span>
+              Khuyến mãi đang diễn ra
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {availablePromotions.map((promo) => (
+                <span key={promo.id} className="inline-flex items-center gap-1 rounded-full border border-outline-variant/20 bg-surface-container-highest px-3 py-1 text-xs text-on-surface-variant">
+                  <span className="material-symbols-outlined text-xs">sell</span>
+                  {promo.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         <section className="rounded-xl border border-outline-variant/10 bg-surface-container-low p-6 md:p-8">
           <h2 className="mb-4 font-headline text-xl font-semibold">Thông tin liên hệ</h2>
           <div className="grid gap-4 sm:grid-cols-1">
@@ -626,6 +781,117 @@ function Checkout() {
           )}
         </section>
 
+        {/* ═══════════════════════════════════════════════════════
+            Coupon Section
+        ═══════════════════════════════════════════════════════ */}
+        <section className="rounded-xl bg-surface-container-low p-6 md:p-8">
+          <h2 className="mb-4 flex items-center gap-3 font-headline text-2xl font-semibold">
+            <span className="material-symbols-outlined text-secondary">redeem</span>
+            Mã giảm giá
+          </h2>
+
+          {/* Personal coupon dropdown */}
+          {availableCoupons.length > 0 && (
+            <div className="mb-4">
+              <label className="mb-2 block text-sm font-medium text-on-surface-variant">
+                Chọn mã ưu đãi của bạn
+              </label>
+              <select
+                value={selectedPersonalCoupon ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setSelectedPersonalCoupon(val || null)
+                  setCouponError(null)
+                  if (val) {
+                    setAppliedCoupon(null)
+                    setCouponCodeInput("")
+                  }
+                }}
+                className="w-full rounded-lg border border-outline-variant/30 bg-surface-container-highest px-3 py-2.5 text-sm text-on-background"
+              >
+                <option value="">— Không dùng mã —</option>
+                {availableCoupons.map((c) => (
+                  <option key={c.id} value={c.couponCode}>
+                    {c.couponCode} — {c.discountType === "Fixed" ? `${c.discountValue.toLocaleString("vi-VN")}đ` : `${c.discountValue}%`}
+                    {c.scope !== "All" && ` (${c.scope === "Tickets" ? "vé" : "bắp nước"})`}
+                    {` - HSD: ${new Date(c.expiresAt).toLocaleDateString("vi-VN")}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Public coupon code input */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-on-surface-variant">
+              Nhập mã giảm giá chung
+            </label>
+            <div className="flex gap-2">
+              <input
+                value={couponCodeInput}
+                onChange={(e) => {
+                  setCouponCodeInput(e.target.value.toUpperCase())
+                  setCouponError(null)
+                }}
+                placeholder="Ví dụ: KOL50K"
+                className="flex-1 rounded-lg border border-outline-variant/30 bg-surface-container-highest px-3 py-2.5 text-sm text-on-background uppercase tracking-wider"
+              />
+              <button
+                type="button"
+                disabled={!couponCodeInput.trim() || verifyingCoupon}
+                onClick={async () => {
+                  if (!couponCodeInput.trim()) return
+                  setVerifyingCoupon(true)
+                  setCouponError(null)
+                  try {
+                    const result = await verifyCoupon(couponCodeInput.trim())
+                    if (result.isValid) {
+                      setAppliedCoupon(couponCodeInput.trim())
+                      setSelectedPersonalCoupon(null)
+                      setCouponError(null)
+                    } else {
+                      setAppliedCoupon(null)
+                      setCouponError(result.errorMessage ?? "Mã không hợp lệ")
+                    }
+                  } catch {
+                    setCouponError("Không thể kiểm tra mã. Vui lòng thử lại.")
+                  } finally {
+                    setVerifyingCoupon(false)
+                  }
+                }}
+                className="rounded-lg bg-secondary/20 px-4 py-2.5 text-sm font-semibold text-secondary transition-colors hover:bg-secondary/30 disabled:opacity-50"
+              >
+                {verifyingCoupon ? (
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-secondary border-t-transparent" />
+                ) : (
+                  "Áp dụng"
+                )}
+              </button>
+            </div>
+            {appliedCoupon && (
+              <div className="mt-2 flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
+                <span className="material-symbols-outlined text-base">check_circle</span>
+                Đã áp dụng mã <strong>{appliedCoupon}</strong>
+                {previewData?.couponDiscountAmount ? ` (giảm ${formatCurrency(previewData.couponDiscountAmount)})` : ""}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAppliedCoupon(null)
+                    setCouponCodeInput("")
+                    setCouponError(null)
+                  }}
+                  className="ml-auto text-xs text-red-300 hover:text-red-200"
+                >
+                  Hủy
+                </button>
+              </div>
+            )}
+            {couponError && (
+              <p className="mt-2 text-sm text-red-300">{couponError}</p>
+            )}
+          </div>
+        </section>
+
         <section className="rounded-xl bg-surface-container-low p-6 md:p-8">
           <h2 className="mb-2 flex items-center gap-3 font-headline text-2xl font-semibold">
             <span className="material-symbols-outlined text-secondary">payment</span>
@@ -701,10 +967,100 @@ function Checkout() {
               </div>
             ))}
           </div>
+          {hasDiscount && previewData && (
+            <div className="mt-3 space-y-1 border-t border-secondary/20 pt-3 text-sm">
+              {previewData.isRegisteredCustomer && displayLoyaltyDiscount > 0 && (
+              <div className="flex items-center justify-between text-secondary">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <span className="material-symbols-outlined text-base">loyalty</span>
+                  Giảm giá thành viên
+                </span>
+                <span className="font-semibold text-red-400">
+                  −{formatCurrency(displayLoyaltyDiscount)}
+                </span>
+              </div>
+              )}
+              {previewData.loyaltyTierName && (
+                <div className="flex items-center justify-between text-[11px] text-on-surface-variant/70">
+                  <span>
+                    {previewData.loyaltyTierName}
+                    {previewData.ticketDiscountPercent != null && previewData.ticketDiscountPercent > 0
+                      ? ` – giảm ${previewData.ticketDiscountPercent}% vé`
+                      : ""}
+                    {previewData.concessionDiscountPercent != null && previewData.concessionDiscountPercent > 0
+                      ? ` + ${previewData.concessionDiscountPercent}% đồ uống`
+                      : ""}
+                  </span>
+                  {previewData.loyaltyTierDescription && (
+                    <span title={previewData.loyaltyTierDescription} className="cursor-help underline decoration-dotted">
+                      ⓘ
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          {hasCouponDiscount && previewData && (
+            <div className="mt-2 space-y-1 border-t border-primary/20 pt-2 text-sm">
+              <div className="flex items-center justify-between text-primary">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <span className="material-symbols-outlined text-base">redeem</span>
+                  Mã giảm giá {previewData.couponCode}
+                </span>
+                <span className="font-semibold text-red-400">
+                  −{formatCurrency(previewData.couponDiscountAmount)}
+                </span>
+              </div>
+              {previewData.couponDescription && (
+                <p className="text-[11px] text-on-surface-variant/70">{previewData.couponDescription}</p>
+              )}
+            </div>
+          )}
+          {appliedPromotions.length > 0 && (
+            <div className="border-t border-outline-variant/20 pt-3 mt-3">
+              <h4 className="text-sm font-semibold text-secondary mb-2">
+                <span className="material-symbols-outlined text-sm mr-1">sell</span> 
+                Khuyến mãi áp dụng
+              </h4>
+              {appliedPromotions.map((promo, idx) => (
+                <div key={idx} className="flex justify-between items-center text-sm text-secondary mb-1">
+                  <span>{promo.promotionName}</span>
+                  <span>-{promo.discountAmount.toLocaleString('vi-VN')}đ</span>
+                </div>
+              ))}
+              {appliedPromotions.length > 1 && promotionDiscountAmount > 0 && (
+                <div className="flex justify-between text-sm font-medium text-secondary mt-2 pt-2 border-t border-outline-variant/20">
+                  <span>Tổng giảm khuyến mãi</span>
+                  <span>-{promotionDiscountAmount.toLocaleString('vi-VN')}đ</span>
+                </div>
+              )}
+            </div>
+          )}
+          {freeItems.length > 0 && (
+            <div className="border-t border-outline-variant/20 pt-3 mt-3">
+              <h4 className="text-sm font-semibold text-secondary mb-2">
+                <span className="material-symbols-outlined text-sm mr-1">card_giftcard</span> 
+                Tặng kèm
+              </h4>
+              {freeItems.map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center text-sm text-on-surface-variant mb-1">
+                  <span>{item.quantity}x {item.concessionName}</span>
+                  <span className="font-medium">0đ</span>
+                </div>
+              ))}
+            </div>
+          )}
           {submitError && <div className="mt-4 rounded border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{submitError}</div>}
           <div className="mt-6 flex items-end justify-between border-t border-outline-variant/20 pt-4">
             <span className="font-headline text-lg text-on-surface-variant">Tổng cộng</span>
-            <span className="font-headline text-3xl font-bold text-secondary">{formatCurrency(totalAmount)}</span>
+            <span className="font-headline text-3xl font-bold text-secondary">
+              {formatCurrency(displayFinalAmount)}
+              {hasDiscount && (
+                <span className="ml-2 text-xs font-normal text-on-surface-variant/60 line-through">
+                  {formatCurrency(displayOriginAmount)}
+                </span>
+              )}
+            </span>
           </div>
           <button
             type="button"
@@ -722,7 +1078,7 @@ function Checkout() {
             ) : (
               <span className="material-symbols-outlined">lock</span>
             )}
-            {postBooking ? "Đã tạo đơn" : `Thanh toán ${formatCurrency(totalAmount)}`}
+            {postBooking ? "Đã tạo đơn" : `Thanh toán ${formatCurrency(displayFinalAmount)}`}
           </button>
         </div>
       </aside>

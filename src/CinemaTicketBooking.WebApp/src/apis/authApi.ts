@@ -5,7 +5,9 @@ import {
   type RegisterRequest,
   type ForgotPasswordRequest,
   type AuthProfileResponse,
+  type ChangePasswordRequest,
 } from "../types/Auth"
+
 
 export async function login(body: LoginRequest): Promise<AuthTokenResponse> {
   const response = await httpClient.post<AuthTokenResponse>("/api/auth/login", body, {
@@ -27,6 +29,13 @@ export async function forgotPassword(body: ForgotPasswordRequest): Promise<void>
   })
 }
 
+export async function refreshToken(): Promise<AuthTokenResponse> {
+  const response = await httpClient.post<AuthTokenResponse>("/api/auth/refresh", undefined, {
+    withCredentials: true,
+  })
+  return response.data
+}
+
 export async function logout(): Promise<void> {
   await httpClient.post("/api/auth/logout", undefined, {
     withCredentials: true,
@@ -39,3 +48,10 @@ export async function getCurrentAuthProfile(): Promise<AuthProfileResponse> {
   })
   return response.data
 }
+
+export async function changePassword(body: ChangePasswordRequest): Promise<void> {
+  await httpClient.post("/api/auth/change-password", body, {
+    withCredentials: true,
+  })
+}
+

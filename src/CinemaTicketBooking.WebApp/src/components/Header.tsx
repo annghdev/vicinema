@@ -8,10 +8,9 @@ import logo from "../assets/logo.png"
 
 const navItems = [
   { label: "Trang chủ", to: "/" },
-  { label: "Thư viện phim", to: "/movies" },
+  { label: "Phim", to: "/movies" },
   { label: "Lịch chiếu", to: "/showtimes" },
   { label: "Sự kiện", to: "/promos" },
-  { label: "Hội viên", to: "/member" },
 ]
 
 function Header() {
@@ -143,15 +142,7 @@ function Header() {
                   <div className="absolute right-0 top-12 z-50 w-56 overflow-hidden rounded-lg border border-outline-variant/20 bg-surface-container-highest shadow-xl">
                     <button
                       type="button"
-                      onClick={() => navigateFromMenu("/booking-history")}
-                      className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-on-surface transition-colors hover:bg-surface-container-high"
-                    >
-                      <span className="material-symbols-outlined text-base">confirmation_number</span>
-                      Lịch sử đặt vé
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => navigateFromMenu("/member?section=profile")}
+                      onClick={() => navigateFromMenu("/profile")}
                       className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-on-surface transition-colors hover:bg-surface-container-high"
                     >
                       <span className="material-symbols-outlined text-base">badge</span>

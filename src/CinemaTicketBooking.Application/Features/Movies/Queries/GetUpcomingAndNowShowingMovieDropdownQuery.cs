@@ -5,11 +5,13 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets dropdown data for movies that are upcoming or currently showing.
 /// </summary>
-public class GetUpcomingAndNowShowingMovieDropdownQuery : IQuery<IReadOnlyList<MovieDropdownDto>>
+public class GetUpcomingAndNowShowingMovieDropdownQuery : ICachableQuery<IReadOnlyList<MovieDropdownDto>>
 {
     public string? SearchTerm { get; set; }
     public int MaxItems { get; set; } = 100;
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => MovieCacheKeys.GetUpcomingAndNowShowingDropdown(SearchTerm, MaxItems);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>

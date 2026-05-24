@@ -27,6 +27,16 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("CouponCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<decimal>("CouponDiscountAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -106,6 +116,9 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("ConcessionId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("IsFree")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
@@ -116,6 +129,42 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                     b.HasIndex("ConcessionId");
 
                     b.ToTable("booking_concessions", (string)null);
+                });
+
+            modelBuilder.Entity("CinemaTicketBooking.Domain.BookingPromotion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BookingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BookingId1")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("DiscountType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("PromotionName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid>("PromotionProgramId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId");
+
+                    b.HasIndex("BookingId1");
+
+                    b.ToTable("booking_promotions", (string)null);
                 });
 
             modelBuilder.Entity("CinemaTicketBooking.Domain.BookingTicket", b =>
@@ -243,10 +292,15 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                     b.ToTable("concessions", (string)null);
                 });
 
-            modelBuilder.Entity("CinemaTicketBooking.Domain.Customer", b =>
+            modelBuilder.Entity("CinemaTicketBooking.Domain.CouponTemplate", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -258,13 +312,112 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("DiscountType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("DurationDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(30);
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal?>("MaxDiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("MaxUsageCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxUsagePerUser")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<int>("TotalUsedCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("coupon_templates", (string)null);
+                });
+
+            modelBuilder.Entity("CinemaTicketBooking.Domain.Customer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AccumulatedPoints")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset?>("DateOfBirth")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<string>("Gender")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsRegistered")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("LoyaltyTier")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasDefaultValue("Bronze");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -297,6 +450,185 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("customers", (string)null);
+                });
+
+            modelBuilder.Entity("CinemaTicketBooking.Domain.CustomerCoupon", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CouponCode")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid?>("CouponTemplateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DiscountType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("IssuedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("MaxDiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("MaxUsage")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("UsageCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("CustomerId", "CouponCode")
+                        .IsUnique();
+
+                    b.ToTable("customer_coupons", (string)null);
+                });
+
+            modelBuilder.Entity("CinemaTicketBooking.Domain.CustomerPromotionUsage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BookingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PromotionProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId", "PromotionProgramId");
+
+                    b.ToTable("customer_promotion_usages", (string)null);
+                });
+
+            modelBuilder.Entity("CinemaTicketBooking.Domain.LoyaltyTierConfiguration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("ConcessionDiscountPercent")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<Guid?>("CouponTemplateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("MaxPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<decimal>("TicketDiscountPercent")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<string>("Tier")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CouponTemplateId");
+
+                    b.HasIndex("Tier")
+                        .IsUnique();
+
+                    b.ToTable("loyalty_tier_configurations", (string)null);
                 });
 
             modelBuilder.Entity("CinemaTicketBooking.Domain.Movie", b =>
@@ -490,6 +822,131 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                     b.HasIndex("CinemaId");
 
                     b.ToTable("pricing_policies", (string)null);
+                });
+
+            modelBuilder.Entity("CinemaTicketBooking.Domain.PromotionCondition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConditionType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid>("PromotionProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SecondaryValue")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Value")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PromotionProgramId");
+
+                    b.ToTable("promotion_conditions", (string)null);
+                });
+
+            modelBuilder.Entity("CinemaTicketBooking.Domain.PromotionFreeConcessionItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ConcessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PromotionProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PromotionProgramId");
+
+                    b.ToTable("promotion_free_concession_items", (string)null);
+                });
+
+            modelBuilder.Entity("CinemaTicketBooking.Domain.PromotionProgram", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("DiscountForm")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("DiscountType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal?>("MaxDiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("MaxDiscountPercentage")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<int?>("MaxUsagePerCustomer")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("PosterImage")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<DateTimeOffset>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("promotion_programs", (string)null);
                 });
 
             modelBuilder.Entity("CinemaTicketBooking.Domain.Screen", b =>
@@ -1219,6 +1676,19 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                     b.Navigation("Concession");
                 });
 
+            modelBuilder.Entity("CinemaTicketBooking.Domain.BookingPromotion", b =>
+                {
+                    b.HasOne("CinemaTicketBooking.Domain.Booking", null)
+                        .WithMany()
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CinemaTicketBooking.Domain.Booking", null)
+                        .WithMany("AppliedPromotions")
+                        .HasForeignKey("BookingId1");
+                });
+
             modelBuilder.Entity("CinemaTicketBooking.Domain.BookingTicket", b =>
                 {
                     b.HasOne("CinemaTicketBooking.Domain.Booking", null)
@@ -1234,6 +1704,16 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Ticket");
+                });
+
+            modelBuilder.Entity("CinemaTicketBooking.Domain.LoyaltyTierConfiguration", b =>
+                {
+                    b.HasOne("CinemaTicketBooking.Domain.CouponTemplate", "CouponTemplate")
+                        .WithMany()
+                        .HasForeignKey("CouponTemplateId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CouponTemplate");
                 });
 
             modelBuilder.Entity("CinemaTicketBooking.Domain.PaymentTransaction", b =>
@@ -1255,6 +1735,24 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Cinema");
+                });
+
+            modelBuilder.Entity("CinemaTicketBooking.Domain.PromotionCondition", b =>
+                {
+                    b.HasOne("CinemaTicketBooking.Domain.PromotionProgram", null)
+                        .WithMany("Conditions")
+                        .HasForeignKey("PromotionProgramId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CinemaTicketBooking.Domain.PromotionFreeConcessionItem", b =>
+                {
+                    b.HasOne("CinemaTicketBooking.Domain.PromotionProgram", null)
+                        .WithMany("FreeConcessionItems")
+                        .HasForeignKey("PromotionProgramId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("CinemaTicketBooking.Domain.Screen", b =>
@@ -1371,9 +1869,18 @@ namespace CinemaTicketBooking.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("CinemaTicketBooking.Domain.Booking", b =>
                 {
+                    b.Navigation("AppliedPromotions");
+
                     b.Navigation("Concessions");
 
                     b.Navigation("Tickets");
+                });
+
+            modelBuilder.Entity("CinemaTicketBooking.Domain.PromotionProgram", b =>
+                {
+                    b.Navigation("Conditions");
+
+                    b.Navigation("FreeConcessionItems");
                 });
 
             modelBuilder.Entity("CinemaTicketBooking.Domain.Screen", b =>

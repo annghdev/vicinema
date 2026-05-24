@@ -16,5 +16,15 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.Property(x => x.PhoneNumber).HasMaxLength(MaxLengthConsts.PhoneNumber);
         builder.Property(x => x.Email).HasMaxLength(MaxLengthConsts.Email);
         builder.Property(x => x.IsRegistered).IsRequired();
+
+        builder.Property(x => x.LoyaltyTier)
+            .HasConversion<string>()
+            .HasMaxLength(32)
+            .IsRequired()
+            .HasDefaultValue(LoyaltyTier.Bronze);
+
+        builder.Property(x => x.AccumulatedPoints)
+            .IsRequired()
+            .HasDefaultValue(0);
     }
 }

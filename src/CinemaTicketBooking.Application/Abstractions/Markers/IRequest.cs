@@ -1,8 +1,8 @@
-﻿namespace CinemaTicketBooking.Application;
+namespace CinemaTicketBooking.Application;
 
 public interface IRequest
 {
-    string CorrelationId { get; }
+    string CorrelationId { get; set; }
 }
 
 public interface ICommand : IRequest;

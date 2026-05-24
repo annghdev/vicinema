@@ -1,4 +1,7 @@
+using CinemaTicketBooking.Domain.Services;
+using CinemaTicketBooking.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using CinemaTicketBooking.Application.Features.Promotions;
 using Microsoft.Extensions.Options;
 
 namespace CinemaTicketBooking.Application.Features;
@@ -16,12 +19,16 @@ public class CreateBookingCommand : ICommand
     public string CustomerName { get; set; } = string.Empty;
     public string CustomerPhoneNumber { get; set; } = string.Empty;
     public string CustomerEmail { get; set; } = string.Empty;
-    public decimal DiscountAmount { get; set; }
     public List<CheckoutConcessionSelection> Concessions { get; set; } = [];
     public string CorrelationId { get; set; } = string.Empty;
     public string PaymentMethod { get; set; } = string.Empty;
     public string ReturnUrl { get; set; } = string.Empty;
     public string IpAddress { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Optional coupon code to apply to this booking.
+    /// </summary>
+    public string? CouponCode { get; set; }
 }
 
 /// <summary>
@@ -32,7 +39,9 @@ public class CreateBookingHandler(
     ITicketLocker locker,
     IOptions<TicketLockingOptions> options,
     IPaymentServiceFactory paymentServiceFactory,
-    IUserContext userContext)
+    IUserContext userContext,
+    IEnumerable<IDiscountStrategy> discountStrategies,
+    IPromotionScanService promotionScanService)
 {
     /// <summary>
     /// Re-validates selection, creates booking, initiates payment, and persists everything atomically.
@@ -116,6 +125,8 @@ public class CreateBookingHandler(
         }
 
         // 5. Optional concessions and final amount calculation.
+        var ticketAmount = selectedTickets.Sum(t => t.Price);
+        var concessionAmount = 0m;
         if (command.Concessions.Count > 0)
         {
             foreach (var selectedConcession in command.Concessions)
@@ -127,11 +138,102 @@ public class CreateBookingHandler(
                         $"Concession with ID '{selectedConcession.ConcessionId}' was not found.");
                 }
 
+                concessionAmount += concession.Price * selectedConcession.Quantity;
                 booking.AddConcession(concession, selectedConcession.Quantity);
             }
         }
 
-        booking.UpdateFinalAmount(command.DiscountAmount);
+        // 5b. Promotion scanning and application (BEFORE composite so strategies see populated data).
+        var appliedPromotions = new List<AppliedPromotionDto>();
+        var freeItems = new List<FreeConcessionItemDto>();
+
+        var activePromotions = await uow.PromotionPrograms.GetActiveWithConditionsAsync(ct);
+        if (activePromotions.Count > 0)
+        {
+            var scanContext = BuildPromotionScanContext(
+                customer, showTime, selectedTickets, booking.OriginAmount, ticketAmount, concessionAmount);
+
+            var scanResult = await promotionScanService.ScanAsync(
+                activePromotions.ToList(), scanContext, ct);
+
+            foreach (var promo in scanResult.AppliedPromotions)
+            {
+                var matchedPromo = activePromotions
+                    .FirstOrDefault(p => p.Id == promo.PromotionProgramId);
+
+                if (customer?.IsRegistered == true && matchedPromo?.MaxUsagePerCustomer.HasValue == true)
+                {
+                    var existingCount = await uow.CustomerPromotionUsages
+                        .GetQueryFilter()
+                        .CountAsync(u => u.CustomerId == customer.Id && u.PromotionProgramId == promo.PromotionProgramId, ct);
+
+                    if (existingCount >= matchedPromo.MaxUsagePerCustomer.Value)
+                        continue;
+                }
+
+                var bookingPromotion = BookingPromotion.Create(
+                    bookingId: booking.Id,
+                    promotionProgramId: promo.PromotionProgramId,
+                    name: promo.PromotionName,
+                    discountAmount: promo.DiscountAmount,
+                    discountType: promo.DiscountType);
+
+                booking.ApplyPromotion(bookingPromotion);
+
+                if (customer?.IsRegistered == true && matchedPromo?.MaxUsagePerCustomer.HasValue == true)
+                {
+                    var usage = CustomerPromotionUsage.Create(
+                        customerId: customer.Id,
+                        promotionProgramId: promo.PromotionProgramId,
+                        bookingId: booking.Id);
+                    uow.CustomerPromotionUsages.Add(usage);
+                }
+
+                appliedPromotions.Add(new AppliedPromotionDto(
+                    promo.PromotionProgramId,
+                    promo.PromotionName,
+                    promo.DiscountType,
+                    promo.DiscountAmount));
+            }
+
+            foreach (var freeItem in scanResult.FreeItems)
+            {
+                var concession = await uow.Concessions.GetByIdAsync(freeItem.ConcessionId, ct);
+                if (concession is not null)
+                {
+                    var freeConcession = BookingConcession.Create(
+                        bookingId: booking.Id,
+                        concessionId: freeItem.ConcessionId,
+                        quantity: freeItem.Quantity,
+                        isFree: true);
+                    booking.Concessions.Add(freeConcession);
+                    freeItems.Add(new FreeConcessionItemDto(
+                        freeItem.ConcessionId,
+                        concession.Name,
+                        freeItem.Quantity));
+                }
+            }
+        }
+
+        // 5c. Apply coupon if provided (BEFORE composite so CouponDiscountStrategy sees it).
+        if (!string.IsNullOrWhiteSpace(command.CouponCode))
+        {
+            await ApplyCouponAndGetDiscountAsync(command.CouponCode, customer, booking, ct);
+        }
+
+        // 5d. Run ALL discount strategies through unified composite (Loyalty + Coupon + Promotion).
+        //     At this point booking.CouponCode/CouponDiscountAmount and booking.AppliedPromotions are populated.
+        decimal totalDiscount = 0m;
+        if (customer?.IsRegistered == true || booking.AppliedPromotions.Count > 0)
+        {
+            var activeTiers = await uow.LoyaltyTiers.GetActiveTiersAsync(ct);
+            var aggregator = new DiscountStrategyComposite(discountStrategies);
+            totalDiscount = aggregator.CalculateTotalDiscount(booking, customer, activeTiers);
+        }
+
+        // Composite totalDiscount already includes loyalty + coupon + promotion.
+        // Set FinalAmount directly to avoid double-subtraction via UpdateFinalAmount params.
+        booking.FinalAmount = Math.Max(0, booking.OriginAmount - totalDiscount);
         uow.Bookings.Add(booking);
 
         // 6. Initiate payment via selected gateway (before commit).
@@ -184,7 +286,52 @@ public class CreateBookingHandler(
             PaymentUrl: paymentResult.PaymentUrl,
             RedirectBehavior: paymentResult.RedirectBehavior,
             PaymentTransactionId: transaction.Id,
-            GatewayTransactionId: paymentResult.GatewayTransactionId);
+            GatewayTransactionId: paymentResult.GatewayTransactionId,
+            PromotionDiscountAmount: booking.TotalPromotionDiscount,
+            AppliedPromotions: appliedPromotions,
+            FreeItems: freeItems);
+    }
+
+    private static PromotionScanContext BuildPromotionScanContext(
+        Customer? customer,
+        ShowTime showTime,
+        List<Ticket> selectedTickets,
+        decimal originAmount,
+        decimal ticketAmount,
+        decimal concessionAmount)
+    {
+        var seatTypes = new List<string>();
+        var seatIds = selectedTickets
+            .Where(t => t.SeatId.HasValue)
+            .Select(t => t.SeatId!.Value)
+            .Distinct()
+            .ToList();
+
+        if (seatIds.Count > 0 && showTime.Screen?.Seats != null)
+        {
+            seatTypes = showTime.Screen.Seats
+                .Where(s => seatIds.Contains(s.Id))
+                .Select(s => s.Type.ToString())
+                .Distinct()
+                .ToList();
+        }
+
+        return new PromotionScanContext
+        {
+            CustomerId = customer?.Id,
+            CustomerAge = customer?.DateOfBirth.HasValue == true
+                ? (int)((DateTimeOffset.UtcNow - customer.DateOfBirth.Value).TotalDays / 365.25)
+                : null,
+            CustomerBirthMonth = customer?.DateOfBirth?.Month,
+            CustomerGender = customer?.Gender,
+            CustomerTier = customer?.LoyaltyTier.ToString(),
+            BookingOriginAmount = originAmount,
+            TicketAmount = ticketAmount,
+            ConcessionAmount = concessionAmount,
+            TicketCount = selectedTickets.Count,
+            SeatTypes = seatTypes,
+            ShowtimeFormat = showTime.Format.ToString()
+        };
     }
 
     private static Customer BuildGuestCustomer(CreateBookingCommand command)
@@ -198,6 +345,91 @@ public class CreateBookingHandler(
             SessionId = command.CustomerSessionId,
             IsRegistered = false
         };
+    }
+
+    private async Task<decimal> ApplyCouponAndGetDiscountAsync(
+        string couponCode,
+        Customer? customer,
+        Booking booking,
+        CancellationToken ct)
+    {
+        var code = couponCode.Trim().ToUpperInvariant();
+        var now = DateTimeOffset.UtcNow;
+        CustomerCoupon? customerCoupon = null;
+        CouponTemplate? template = null;
+
+        // Try personal coupon first
+        if (customer?.IsRegistered == true)
+        {
+            customerCoupon = await uow.CustomerCoupons.GetByCustomerAndCodeAsync(customer.Id, code, ct);
+        }
+
+        if (customerCoupon is not null)
+        {
+            customerCoupon.ValidateAvailable(now);
+        }
+        else
+        {
+            template = await uow.CouponTemplates.GetByCodeAsync(code, ct);
+            if (template is null)
+                throw new InvalidOperationException("Mã giảm giá không hợp lệ.");
+
+            template.ValidateAvailable(now);
+        }
+
+        var discountType = customerCoupon?.DiscountType ?? template!.DiscountType;
+        var discountValue = customerCoupon?.DiscountValue ?? template!.DiscountValue;
+        var maxDiscountAmount = customerCoupon?.MaxDiscountAmount ?? template!.MaxDiscountAmount;
+        var scope = customerCoupon?.Scope ?? template!.Scope;
+
+        decimal qualifyingAmount = scope switch
+        {
+            DiscountScope.All => booking.OriginAmount,
+            DiscountScope.Tickets => booking.Tickets.Sum(t => t.Ticket?.Price ?? 0m),
+            DiscountScope.Concessions => booking.Concessions.Sum(c => (c.Concession?.Price ?? 0m) * c.Quantity),
+            _ => booking.OriginAmount
+        };
+
+        decimal discount;
+        if (discountType == DiscountType.Fixed)
+        {
+            discount = Math.Min(discountValue, qualifyingAmount);
+        }
+        else
+        {
+            discount = qualifyingAmount * discountValue / 100m;
+            if (maxDiscountAmount.HasValue)
+                discount = Math.Min(discount, maxDiscountAmount.Value);
+        }
+
+        discount = Math.Round(discount, 2);
+
+        // Apply coupon to booking (domain logic + raise event)
+        booking.ApplyCoupon(code, discount);
+
+        // Persist coupon usage
+        if (customerCoupon is not null)
+        {
+            customerCoupon.MarkUsed(now);
+            uow.CustomerCoupons.Update(customerCoupon);
+        }
+
+        // If it's a public template, increment global usage
+        if (template is not null)
+        {
+            template.IncrementUsage();
+            uow.CouponTemplates.Update(template);
+
+            // Create a CustomerCoupon record to track per-user usage
+            var usageRecord = CustomerCoupon.RedeemPublic(customer?.Id ?? Guid.Empty, template, now);
+
+            // Mark as used immediately to prevent re-use by the same customer
+            usageRecord.MarkUsed(now);
+
+            uow.CustomerCoupons.Add(usageRecord);
+        }
+
+        return discount;
     }
 }
 
@@ -235,10 +467,6 @@ public class CreateBookingValidator : AbstractValidator<CreateBookingCommand>
         RuleFor(x => x.SelectedTicketIds)
             .NotEmpty()
             .WithMessage("Selected ticket IDs are required.");
-
-        RuleFor(x => x.DiscountAmount)
-            .GreaterThanOrEqualTo(0)
-            .WithMessage("Discount amount cannot be negative.");
 
         RuleFor(x => x.PaymentMethod)
             .NotEmpty()

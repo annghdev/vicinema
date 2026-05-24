@@ -5,9 +5,11 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets all concession items.
 /// </summary>
-public class GetConcessionsQuery : IQuery<IReadOnlyList<ConcessionDto>>
+public class GetConcessionsQuery : ICachableQuery<IReadOnlyList<ConcessionDto>>
 {
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => ConcessionCacheKeys.GetConcessions();
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>

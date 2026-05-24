@@ -5,7 +5,7 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets movies with pagination, filtering, and sorting.
 /// </summary>
-public class GetPagedMoviesQuery : IQuery<PagedResult<MovieDto>>
+public class GetPagedMoviesQuery : ICachableQuery<PagedResult<MovieDto>>
 {
     public int PageNumber { get; set; } = 1;
     public int PageSize { get; set; } = 20;
@@ -15,6 +15,8 @@ public class GetPagedMoviesQuery : IQuery<PagedResult<MovieDto>>
     public string SortBy { get; set; } = "createdAt";
     public string SortDirection { get; set; } = "desc";
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => MovieCacheKeys.GetPagedMovies(PageNumber, PageSize, SearchTerm, Status, Genre, SortBy, SortDirection);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(5);
 }
 
 /// <summary>

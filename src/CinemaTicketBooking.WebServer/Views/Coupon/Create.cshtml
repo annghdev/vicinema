@@ -1,0 +1,115 @@
+@using CinemaTicketBooking.Application.Features.Coupons
+@model CreateCouponTemplateCommand
+
+@{
+    Layout = "_Layout";
+}
+
+<div class="mx-auto max-w-2xl space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <!-- Header -->
+    <div>
+        <a asp-action="Index" class="group mb-4 inline-flex items-center gap-1 text-sm text-on-surface-variant transition-colors hover:text-secondary">
+            <span class="material-symbols-outlined text-lg transition-transform group-hover:-translate-x-1">arrow_back</span>
+            Quay lại
+        </a>
+        <h2 class="font-headline text-2xl font-bold text-on-surface flex items-center gap-3">
+            <span class="material-symbols-outlined text-secondary drop-shadow-[0_0_8px_rgba(0,244,254,0.3)]">add_circle</span>
+            Tạo mã giảm giá
+        </h2>
+        <p class="text-sm text-on-surface-variant mt-1">Điền thông tin để tạo mã giảm giá mới.</p>
+    </div>
+
+    <!-- Form -->
+    <form asp-action="Create" method="post" class="rounded-3xl border border-white/5 bg-surface-container-low/40 p-8 backdrop-blur-xl shadow-2xl space-y-6">
+        <div asp-validation-summary="ModelOnly" class="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-200"></div>
+
+        <!-- Code & Type -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label asp-for="Code" class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Mã giảm giá *</label>
+                <input asp-for="Code" required class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface font-mono font-bold uppercase focus:outline-none focus:border-primary/50 transition-all" placeholder="Ví dụ: KOL50K" />
+                <span asp-validation-for="Code" class="text-xs text-red-300"></span>
+            </div>
+            <div>
+                <label asp-for="Type" class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Loại mã *</label>
+                <select asp-for="Type" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all">
+                    <option value="Public">Public — Dùng chung (KOL, khuyến mãi)</option>
+                    <option value="Personal">Personal — Cá nhân (tặng hội viên)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Discount -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+                <label asp-for="DiscountType" class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Hình thức giảm *</label>
+                <select asp-for="DiscountType" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all">
+                    <option value="Fixed">Cố định (VNĐ)</option>
+                    <option value="Percentage">Phần trăm (%)</option>
+                </select>
+            </div>
+            <div>
+                <label asp-for="DiscountValue" class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Giá trị giảm *</label>
+                <input asp-for="DiscountValue" type="number" min="1" step="0.01" required class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" />
+                <span asp-validation-for="DiscountValue" class="text-xs text-red-300"></span>
+            </div>
+            <div>
+                <label asp-for="MaxDiscountAmount" class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Giới hạn giảm tối đa (VNĐ)</label>
+                <input asp-for="MaxDiscountAmount" type="number" min="0" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" placeholder="Để trống nếu không giới hạn" />
+            </div>
+        </div>
+
+        <!-- Scope -->
+        <div>
+            <label asp-for="Scope" class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Phạm vi áp dụng *</label>
+            <select asp-for="Scope" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all">
+                <option value="All">Toàn bộ hóa đơn (vé + bắp nước)</option>
+                <option value="Tickets">Chỉ giảm giá vé</option>
+                <option value="Concessions">Chỉ giảm bắp nước</option>
+            </select>
+        </div>
+
+        <!-- Usage Limits -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label asp-for="MaxUsageCount" class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Số lần sử dụng tối đa (0 = không giới hạn)</label>
+                <input asp-for="MaxUsageCount" type="number" min="0" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" />
+            </div>
+            <div>
+                <label asp-for="MaxUsagePerUser" class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Số lần / user (0 = không giới hạn)</label>
+                <input asp-for="MaxUsagePerUser" type="number" min="0" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" />
+            </div>
+        </div>
+
+        <!-- Dates -->
+        <div>
+            <label asp-for="DurationDays" class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Hiệu lực (số ngày) *</label>
+            <input asp-for="DurationDays" type="number" min="1" required class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" />
+            <span class="text-[10px] text-on-surface-variant mt-1 block">Số ngày kể từ khi người dùng nhận / nhập mã.</span>
+        </div>
+
+        <!-- Description -->
+        <div>
+            <label asp-for="Description" class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">Mô tả</label>
+            <textarea asp-for="Description" rows="3" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-all" placeholder="Mô tả ngắn về mã giảm giá..."></textarea>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+            <label class="relative inline-flex cursor-pointer items-center">
+                <input asp-for="IsActive" type="checkbox" class="peer sr-only" checked="@Model.IsActive" />
+                <div class="peer h-6 w-11 rounded-full bg-white/10 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-slate-500 after:transition-all peer-checked:bg-secondary/30 peer-checked:after:translate-x-full peer-checked:after:bg-secondary"></div>
+            </label>
+            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Kích hoạt ngay</span>
+        </div>
+
+        <!-- Submit -->
+        <div class="flex justify-end gap-4 pt-4 border-t border-white/5">
+            <a asp-action="Index" class="rounded-full border border-outline-variant/30 px-6 py-3 text-sm font-bold text-on-surface transition-colors hover:bg-white/5">
+                Hủy
+            </a>
+            <button type="submit" class="rounded-full bg-gradient-to-r from-primary to-primary-container px-8 py-3 text-sm font-bold text-on-primary shadow-lg shadow-primary/20 transition-transform active:scale-95 hover:scale-[1.02]">
+                Tạo mã giảm giá
+            </button>
+        </div>
+    </form>
+</div>

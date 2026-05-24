@@ -5,7 +5,7 @@ namespace CinemaTicketBooking.Application.Features;
 /// <summary>
 /// Gets concession items with pagination, filtering, and sorting.
 /// </summary>
-public class GetPagedConcessionsQuery : IQuery<PagedResult<ConcessionDto>>
+public class GetPagedConcessionsQuery : ICachableQuery<PagedResult<ConcessionDto>>
 {
     public int PageNumber { get; set; } = 1;
     public int PageSize { get; set; } = 20;
@@ -14,6 +14,8 @@ public class GetPagedConcessionsQuery : IQuery<PagedResult<ConcessionDto>>
     public string SortBy { get; set; } = "createdAt";
     public string SortDirection { get; set; } = "desc";
     public string CorrelationId { get; set; } = string.Empty;
+    public string CacheKey => ConcessionCacheKeys.GetPagedConcessions(PageNumber, PageSize, SearchTerm, IsAvailable, SortBy, SortDirection);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 }
 
 /// <summary>

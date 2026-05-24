@@ -5,6 +5,7 @@ using CinemaTicketBooking.Domain;
 using CinemaTicketBooking.WebServer.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Wolverine;
 
 namespace CinemaTicketBooking.WebServer.Controllers;
@@ -13,6 +14,7 @@ namespace CinemaTicketBooking.WebServer.Controllers;
 /// Handles cinema management server-side rendered pages.
 /// </summary>
 [Authorize(AuthenticationSchemes = "Identity.Application")]
+[EnableRateLimiting("fixed")]
 public class CinemaController(IMessageBus bus) : Controller
 {
     /// <summary>
@@ -125,3 +127,4 @@ public class CinemaController(IMessageBus bus) : Controller
         }
     }
 }
+

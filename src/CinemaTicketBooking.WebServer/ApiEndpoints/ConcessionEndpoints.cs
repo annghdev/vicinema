@@ -16,6 +16,7 @@ public static class ConcessionEndpoints
     public static void MapConcessionEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/concessions")
+            .RequireRateLimiting("fixed")
             .WithTags("Concessions")
             .AllowAnonymous();
 

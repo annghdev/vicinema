@@ -9,6 +9,11 @@ namespace CinemaTicketBooking.Infrastructure.Persistence;
 public class AppDbContext(DbContextOptions<AppDbContext> options)
     : IdentityDbContext<Account, Role, Guid>(options)
 {
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+        optionsBuilder.AddInterceptors(new UtcSaveChangesInterceptor());
+    }
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<Cinema> Cinemas => Set<Cinema>();
     public DbSet<Movie> Movies => Set<Movie>();
@@ -26,6 +31,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Slide> Slides => Set<Slide>();
+    public DbSet<LoyaltyTierConfiguration> LoyaltyTierConfigurations => Set<LoyaltyTierConfiguration>();
+    public DbSet<CouponTemplate> CouponTemplates => Set<CouponTemplate>();
+    public DbSet<CustomerCoupon> CustomerCoupons => Set<CustomerCoupon>();
+    public DbSet<PromotionProgram> PromotionPrograms => Set<PromotionProgram>();
+    public DbSet<PromotionCondition> PromotionConditions => Set<PromotionCondition>();
+    public DbSet<PromotionFreeConcessionItem> PromotionFreeConcessionItems => Set<PromotionFreeConcessionItem>();
+    public DbSet<BookingPromotion> BookingPromotions => Set<BookingPromotion>();
+    public DbSet<CustomerPromotionUsage> CustomerPromotionUsages => Set<CustomerPromotionUsage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

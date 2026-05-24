@@ -16,6 +16,7 @@ public static class PaymentEndpoints
     public static void MapPaymentEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/payments")
+            .RequireRateLimiting("sliding")
             .WithTags("Payments");
 
         group.MapGet("/vnpay-return", VnpayReturn)
@@ -522,3 +523,4 @@ public sealed record PaymentResultLookupResponse(
     BookingDetailsDto? Booking,
     string? ErrorMessage,
     bool CanRetry);
+

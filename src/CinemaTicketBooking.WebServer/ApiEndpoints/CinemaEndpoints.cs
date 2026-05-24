@@ -10,6 +10,7 @@ public static class CinemaEndpoints
     public static void MapCinemaEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/cinemas")
+            .RequireRateLimiting("fixed")
             .WithTags("Cinemas")
             .AllowAnonymous();
 
@@ -110,3 +111,4 @@ public sealed class GetCinemaDropdownRequest
     public bool OnlyActive { get; init; } = true;
     public int MaxItems { get; init; } = 100;
 }
+
