@@ -15,12 +15,12 @@ public sealed class RefreshTokenOptions
     /// <summary>
     /// Cookie path (use <c>/</c> if the API and refresh endpoint are not under the same prefix in all environments).
     /// </summary>
-    public string CookiePath { get; set; } = "/api/auth";
+    public string CookiePath { get; set; } = "/";
 
     /// <summary>
     /// When true, sets Secure flag on the refresh cookie.
     /// </summary>
     public bool CookieSecure { get; set; } = true;
 
-    public SameSiteMode CookieSameSite { get; set; } = SameSiteMode.Strict;
+    public SameSiteMode CookieSameSite { get; set; } = SameSiteMode.Lax;
 }

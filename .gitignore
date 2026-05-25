@@ -331,6 +331,8 @@ __pycache__/
 .context/
 .docs/
 *.env
+/graphify-out
+/.config/opencode/skills/graphify
 
 # Telerik's JustMock configuration file
 *.jmconfig
