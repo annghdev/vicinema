@@ -377,3 +377,4 @@ FodyWeavers.xsd
 CinemaTicketBooking.sln
 /src/CinemaTicketBooking.Application/Features/Tests/TestRequest.cs
 /deployment/AWS/docker-compose.yaml
+/src/graphify-out/cache
