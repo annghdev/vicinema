@@ -401,7 +401,7 @@ public class DataSeeder(
         var promo2 = PromotionProgram.Create(
             "Birthday Special",
             "Giảm 30.000đ cho vé xem phim trong tháng sinh nhật",
-            null,
+            "https://media.istockphoto.com/id/2218158234/vector/happy-birthday-greeting-clipart-banner-design-birthday-greeting-text-and-wishes-with.jpg?s=612x612&w=0&k=20&c=fd8NBCrZ19By6qIUZnlKhYwym3AjNZOtPR-jyeu5ZJo=",
             DateTimeOffset.UtcNow,
             DateTimeOffset.UtcNow.AddMonths(1),
             PromotionDiscountType.TicketOnly,
@@ -417,7 +417,7 @@ public class DataSeeder(
         var promo3 = PromotionProgram.Create(
             "Family Pack",
             "Tặng 1 bắp + 1 nước khi mua từ 3 vé",
-            null,
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcREYw8mSlgZpApa6HjFlfdhG-W2gy6BZZlpOQ&s",
             DateTimeOffset.UtcNow,
             DateTimeOffset.UtcNow.AddMonths(1),
             PromotionDiscountType.FreeConcession,
@@ -435,7 +435,7 @@ public class DataSeeder(
         var promo4 = PromotionProgram.Create(
             "VIP Experience",
             "Giảm 15% bắp nước cho ghế VIP, tối đa 30.000đ",
-            null,
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQzjodAX4vvWhsSmCv1ibEPWikVKpzoZqYUXQ&s",
             DateTimeOffset.UtcNow,
             DateTimeOffset.UtcNow.AddMonths(1),
             PromotionDiscountType.Concession,

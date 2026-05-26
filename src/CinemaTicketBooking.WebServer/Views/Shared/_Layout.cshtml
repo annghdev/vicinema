@@ -98,6 +98,27 @@
         .neon-glow {
         filter: drop-shadow(0 0 8px rgba(0, 244, 254, 0.5));
         }
+
+        /* Custom Dark Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0b0e14;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #22262f;
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #45484f;
+        }
+        /* Firefox support */
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #22262f #0b0e14;
+        }
     </style>
     @await RenderSectionAsync("Styles", required: false)
 </head>
@@ -117,7 +138,7 @@
 
     <!-- SideNavBar -->
     <aside id="sidebar"
-           class="fixed left-0 top-0 h-full w-64 z-50 flex flex-col bg-[#0b0e14] border-r border-[#45484f]/10 shadow-[10px_0_30px_rgba(0,0,0,0.5)] transition-all duration-300 -translate-x-full lg:translate-x-0">
+           class="fixed left-0 top-0 h-full w-72 z-50 flex flex-col bg-[#0b0e14] border-r border-[#45484f]/10 shadow-[10px_0_30px_rgba(0,0,0,0.5)] transition-all duration-300 -translate-x-full lg:translate-x-0">
         <div class="p-8 flex items-center justify-between">
             <div>
                 <h1 class="text-xl font-black text-primary font-headline uppercase tracking-widest">VICINEMA</h1>
@@ -127,7 +148,7 @@
                 <span class="material-symbols-outlined">close</span>
             </button>
         </div>
-        <nav class="flex-1 mt-4 overflow-y-auto custom-scrollbar">
+        <nav class="flex-1 mt-4 overflow-y-auto overflow-x-hidden custom-scrollbar">
             @if (User.IsInRole(RoleNames.SystemAdmin) || User.IsInRole(RoleNames.Admin) || (await AuthorizationService.AuthorizeAsync(User, Permissions.ReportsView)).Succeeded)
             {
                 <a class="flex items-center gap-3 px-6 py-4 font-headline uppercase tracking-widest text-xs transition-all duration-200 @(controller == "Home" && action == "Index" ? "text-[#00f4fe] bg-[#61b4fe]/10 border-r-4 border-[#00f4fe] drop-shadow-[0_0_5px_rgba(0,244,254,0.3)] translate-x-1" : "text-slate-500 hover:text-slate-200 hover:bg-white/5")"
@@ -251,7 +272,7 @@
 
     <!-- TopAppBar -->
     <header id="topAppBar"
-            class="fixed top-0 right-0 left-0 lg:left-64 z-40 bg-[#0b0e14]/60 backdrop-blur-xl border-b border-[#45484f]/20 shadow-2xl shadow-black/40 flex items-center justify-between px-8 h-20 transition-all duration-300">
+            class="fixed top-0 right-0 left-0 lg:left-72 z-40 bg-[#0b0e14]/60 backdrop-blur-xl border-b border-[#45484f]/20 shadow-2xl shadow-black/40 flex items-center justify-between px-8 h-20 transition-all duration-300">
         <div class="flex items-center gap-6">
             <button id="toggleSidebar" class="p-2 text-slate-400 hover:bg-[#61b4fe]/10 hover:text-[#61b4fe] transition-all rounded-lg active:scale-95 duration-200">
                 <span class="material-symbols-outlined">menu</span>
@@ -311,7 +332,7 @@
 
     <!-- Main Content -->
     <main id="mainContent"
-          class="lg:ml-64 pt-28 p-8 min-h-screen bg-gradient-to-br from-background via-surface-container-low to-background transition-all duration-300">
+          class="lg:ml-72 pt-28 p-8 min-h-screen bg-gradient-to-br from-background via-surface-container-low to-background transition-all duration-300">
         @RenderBody()
     </main>
     <!-- Global Toast Container -->
