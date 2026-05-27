@@ -42,6 +42,29 @@ services:
       - "6379"
     restart: "always"
 
+  # ------------------------------------------
+  # Grafana Alloy — Telemetry collector
+  # Receives logs/traces from webserver,
+  # scrapes metrics, pushes all to Grafana Cloud
+  # ------------------------------------------
+  alloy:
+    image: "grafana/alloy:v1.9.0"
+    command: ["run", "/etc/alloy/config.alloy", "--server.http.listen-addr=0.0.0.0:12345"]
+    env_file:
+      - .env
+    configs:
+      - source: alloy_config
+        target: /etc/alloy/config.alloy
+    expose:
+      - "3100"
+      - "4317"
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.2"
+    restart: "always"
+
   webserver:
     image: "${WEBSERVER_IMAGE}"
     pull_policy: always
@@ -51,6 +74,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
       - ConnectionStrings__redis=cache:6379,password=${CACHE_PASSWORD}
+      - LOKI_ENDPOINT=http://alloy:3100
+      - TEMPO_OTLP_ENDPOINT=http://alloy:4317
     ports:
       - "${WEBSERVER_PORT:-7000}:8080"
     depends_on:
@@ -59,6 +84,8 @@ services:
       db:
         condition: "service_healthy"
       minio:
+        condition: "service_started"
+      alloy:
         condition: "service_started"
     restart: "always"
 
@@ -73,6 +100,117 @@ services:
       webserver:
         condition: "service_started"
     restart: "always"
+
+# ------------------------------------------
+# Inline Alloy config — no external file needed
+# Credentials are read at runtime via sys.env()
+# ------------------------------------------
+configs:
+  alloy_config:
+    content: |
+      // =============================================
+      // Grafana Alloy — CinemaTicketBooking Production
+      // Collects logs, traces, metrics and forwards
+      // to Grafana Cloud
+      // =============================================
+
+      // =============================================
+      // Logs: Loki-compatible receiver → Grafana Cloud
+      // =============================================
+
+      loki.source.api "receiver" {
+        http {
+          listen_address = "0.0.0.0"
+          listen_port    = 3100
+        }
+        forward_to = [loki.write.grafana_cloud.receiver]
+      }
+
+      loki.write "grafana_cloud" {
+        endpoint {
+          url = sys.env("GRAFANA_CLOUD_LOKI_URL")
+          basic_auth {
+            username = sys.env("GRAFANA_CLOUD_LOKI_USERNAME")
+            password = sys.env("GRAFANA_CLOUD_API_KEY")
+          }
+        }
+      }
+
+      // =============================================
+      // Traces: OTLP gRPC receiver → Grafana Cloud
+      // =============================================
+
+      otelcol.receiver.otlp "default" {
+        grpc {
+          endpoint = "0.0.0.0:4317"
+        }
+        output {
+          traces = [otelcol.exporter.otlphttp.grafana_cloud.input]
+        }
+      }
+
+      otelcol.auth.basic "grafana_cloud" {
+        username = sys.env("GRAFANA_CLOUD_TEMPO_USERNAME")
+        password = sys.env("GRAFANA_CLOUD_API_KEY")
+      }
+
+      otelcol.exporter.otlphttp "grafana_cloud" {
+        client {
+          endpoint = sys.env("GRAFANA_CLOUD_TEMPO_URL")
+          auth     = otelcol.auth.basic.grafana_cloud.handler
+        }
+      }
+
+      // =============================================
+      // Metrics: Prometheus scrape → Grafana Cloud
+      // =============================================
+
+      prometheus.scrape "webserver" {
+        targets = [{
+          __address__ = "webserver:8080",
+        }]
+        forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
+        scrape_interval = "15s"
+      }
+
+      // =============================================
+      // PostgreSQL metrics (built-in exporter)
+      // =============================================
+
+      prometheus.exporter.postgres "db" {
+        data_source_names = ["postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=disable"]
+      }
+
+      prometheus.scrape "postgres" {
+        targets         = prometheus.exporter.postgres.db.targets
+        forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
+        scrape_interval = "15s"
+      }
+
+      // =============================================
+      // Redis metrics (built-in exporter)
+      // =============================================
+
+      prometheus.exporter.redis "cache" {
+        redis_addr     = "cache:6379"
+        redis_password = "${CACHE_PASSWORD}"
+      }
+
+      prometheus.scrape "redis" {
+        targets         = prometheus.exporter.redis.cache.targets
+        forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
+        scrape_interval = "15s"
+      }
+
+      prometheus.remote_write "grafana_cloud" {
+        endpoint {
+          url = sys.env("GRAFANA_CLOUD_PROMETHEUS_URL")
+          basic_auth {
+            username = sys.env("GRAFANA_CLOUD_PROMETHEUS_USERNAME")
+            password = sys.env("GRAFANA_CLOUD_API_KEY")
+          }
+        }
+      }
 
 volumes:
   postgres_data:

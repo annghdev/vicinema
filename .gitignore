@@ -378,3 +378,5 @@ CinemaTicketBooking.sln
 /src/CinemaTicketBooking.Application/Features/Tests/TestRequest.cs
 /deployment/AWS/docker-compose.yaml
 /src/graphify-out/cache
+/dockers/production/AWS-without-RDS/backupenv.txt
+/dockers/production/AWS-without-RDS/backup-compose.yaml

@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -23,6 +24,7 @@ public static class Extensions
 
     public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
+        builder.Logging.ClearProviders();
         builder.ConfigureOpenTelemetry();
         builder.ConfigureStructuredLogging();
 
@@ -60,7 +62,12 @@ public static class Extensions
                 .Enrich.FromLogContext()
                 .Enrich.WithProperty("service_name", builder.Environment.ApplicationName)
                 .Enrich.WithProperty("deployment_environment", builder.Environment.EnvironmentName)
-                .WriteTo.Console();
+                .WriteTo.Console(restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information);
+
+            if (builder.Environment.IsDevelopment())
+            {
+                loggerConfiguration.MinimumLevel.Debug();
+            }
 
             if (!string.IsNullOrWhiteSpace(lokiEndpoint))
             {
@@ -76,7 +83,7 @@ public static class Extensions
                         "deployment_environment"
                     ]);
             }
-        });
+        }, writeToProviders: true);
 
         return builder;
     }
@@ -102,6 +109,33 @@ public static class Extensions
                     new KeyValuePair<string, object>("deployment.environment", builder.Environment.EnvironmentName),
                     new KeyValuePair<string, object>("service.namespace", "cinema-ticket-booking")
                 ]))
+            .WithLogging(logging =>
+            {
+                var otlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+                if (Uri.TryCreate(otlpEndpoint, UriKind.Absolute, out var otlpEndpointUri))
+                {
+                    var otlpProtocolValue = builder.Configuration["OTEL_EXPORTER_OTLP_PROTOCOL"];
+                    var otlpProtocol = string.Equals(otlpProtocolValue, "grpc", StringComparison.OrdinalIgnoreCase)
+                        ? OtlpExportProtocol.Grpc
+                        : OtlpExportProtocol.HttpProtobuf;
+
+                    logging.AddOtlpExporter(options =>
+                    {
+                        options.Endpoint = otlpEndpointUri;
+                        options.Protocol = otlpProtocol;
+                    });
+                }
+
+                var tempoEndpoint = builder.Configuration["TEMPO_OTLP_ENDPOINT"];
+                if (Uri.TryCreate(tempoEndpoint, UriKind.Absolute, out var tempoEndpointUri))
+                {
+                    logging.AddOtlpExporter(options =>
+                    {
+                        options.Endpoint = tempoEndpointUri;
+                        options.Protocol = OtlpExportProtocol.Grpc;
+                    });
+                }
+            })
             .WithMetrics(metrics =>
             {
                 metrics.AddAspNetCoreInstrumentation()
