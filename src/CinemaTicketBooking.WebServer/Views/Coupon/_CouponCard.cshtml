@@ -30,14 +30,14 @@
                 <p class="font-bold text-secondary">
                     @if (Model.DiscountType == "Fixed")
                     {
-                        @($"{Model.DiscountValue:N0}đ")
+                        @($"{ Model.DiscountValue:N0} ₫")
                     }
                     else
                     {
                         @($"{Model.DiscountValue}%")
                         if (Model.MaxDiscountAmount.HasValue)
                         {
-                            <span class="text-xs text-slate-400">(tối đa @Model.MaxDiscountAmount.Value:N0₫)</span>
+                            <span class="text-xs text-slate-400">(tối đa @Model.MaxDiscountAmount.Value.ToString("N0") ₫)</span>
                         }
                     }
                 </p>

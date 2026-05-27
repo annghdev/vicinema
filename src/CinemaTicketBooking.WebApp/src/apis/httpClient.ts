@@ -1,5 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios"
-import { readAuthState, persistAuthState, clearAuthState } from "../lib/authSession"
+import { readAuthState, persistAuthState, clearAuthState, hasRefreshCookieHint } from "../lib/authSession"
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? ""
 
@@ -52,6 +52,54 @@ function isAccessTokenExpiringSoon(): boolean {
 }
 
 // =============================================
+// Token refresh helper (queue-aware singleton)
+// =============================================
+
+/**
+ * Calls POST /api/auth/refresh with HttpOnly cookie credentials.
+ * Uses an internal mutex so concurrent callers (proactive refresh,
+ * 401-retry) are serialized — only one HTTP request is made, and
+ * all waiters receive the same result.
+ */
+export async function performTokenRefresh(): Promise<string | null> {
+  // If already refreshing, queue this caller and wait for the result
+  if (isRefreshing) {
+    return new Promise<string | null>((resolve, reject) => {
+      pendingQueue.push({ resolve, reject })
+    })
+  }
+
+  isRefreshing = true
+  try {
+    const response = await axios.post(
+      `${apiBaseUrl}/api/auth/refresh`,
+      undefined,
+      { withCredentials: true, timeout: 10000 }
+    )
+
+    const data = response.data as {
+      accessToken: string
+      accessTokenExpiresAtUtc: string
+      accountId: string
+      refreshToken: string | null
+    }
+
+    // Persist new tokens (in-memory session + localStorage profile)
+    persistAuthState(data)
+    processPendingQueue(data.accessToken)
+
+    return data.accessToken
+  } catch (err) {
+    processPendingQueue(null, err)
+    // Refresh token invalid or expired — clear session
+    clearAuthState()
+    return null
+  } finally {
+    isRefreshing = false
+  }
+}
+
+// =============================================
 // Request interceptor — attach Bearer token + proactive refresh
 // =============================================
 
@@ -68,7 +116,7 @@ httpClient.interceptors.request.use(async (config) => {
     return config
   }
 
-  // Proactively refresh if token is about to expire
+  // Proactively refresh if token is about to expire (serialized via queue)
   if (readAuthState() && isAccessTokenExpiringSoon()) {
     try {
       const newToken = await performTokenRefresh()
@@ -101,49 +149,29 @@ httpClient.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retried?: boolean }
 
-    // 1. Handle 401 — attempt token refresh
+    // 1. Handle 401 — attempt token refresh (serialized via queue inside performTokenRefresh)
+    //    Check readAuthState() (in-memory) OR hasRefreshCookieHint() (localStorage flag)
+    //    to handle the case where page just reloaded and in-memory is empty but cookie exists.
     if (
       error.response?.status === 401 &&
       originalRequest &&
       !originalRequest._retried &&
       !originalRequest.url?.includes("/api/auth/refresh") &&
       !originalRequest.url?.includes("/api/auth/login") &&
-      readAuthState()
+      (readAuthState() || hasRefreshCookieHint())
     ) {
       originalRequest._retried = true
 
-      if (isRefreshing) {
-        // Queue this request until the ongoing refresh completes
-        return new Promise((resolve, reject) => {
-          pendingQueue.push({
-            resolve: (token) => {
-              if (token) {
-                originalRequest.headers.Authorization = `Bearer ${token}`
-              }
-              resolve(httpClient(originalRequest))
-            },
-            reject,
-          })
-        })
-      }
-
-      isRefreshing = true
-
       try {
         const newToken = await performTokenRefresh()
-        processPendingQueue(newToken)
 
         if (newToken) {
           originalRequest.headers.Authorization = `Bearer ${newToken}`
           return httpClient(originalRequest)
         }
       } catch (refreshError) {
-        processPendingQueue(null, refreshError)
-        // Refresh failed — force logout
         clearAuthState()
         return Promise.reject(refreshError)
-      } finally {
-        isRefreshing = false
       }
     }
 
@@ -161,38 +189,3 @@ httpClient.interceptors.response.use(
     return Promise.reject(error)
   }
 )
-
-// =============================================
-// Token refresh helper
-// =============================================
-
-/**
- * Calls POST /api/auth/refresh with HttpOnly cookie credentials.
- * On success, persists the new tokens and returns the new access token.
- * On failure, clears auth state (session expired).
- */
-async function performTokenRefresh(): Promise<string | null> {
-  try {
-    const response = await axios.post(
-      `${apiBaseUrl}/api/auth/refresh`,
-      undefined,
-      { withCredentials: true, timeout: 10000 }
-    )
-
-    const data = response.data as {
-      accessToken: string
-      accessTokenExpiresAtUtc: string
-      accountId: string
-      refreshToken: string | null
-    }
-
-    // Persist new tokens (this updates localStorage + dispatches events)
-    persistAuthState(data)
-
-    return data.accessToken
-  } catch {
-    // Refresh token invalid or expired — clear session
-    clearAuthState()
-    return null
-  }
-}

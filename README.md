@@ -40,15 +40,18 @@ Cinema Ticket Booking is an end-to-end web application that allows customers to 
 
 | Category | Highlights |
 |---|---|
-| **Authentication & Authorization** | ASP.NET Core Identity with JWT + HttpOnly refresh-token cookies, role-based access control, Google & Facebook OAuth |
-| **Real-time Seat Status** | SignalR hubs broadcast ticket lock/unlock events instantly — multiple users see the same seat map live |
+| **Real-time Seat Status Update** | SignalR hubs broadcast ticket lock/unlock events instantly — multiple users see the same seat map live |
+| **Seat Locking** | Redis-based seat locking with fallbacks to Postgres advisory locks and optimistic concurrency via xmin. |
 | **Seat Selection Rules** | Flexible rules to prevent invalid seat selection (gaps between seats, orphaned seats, multiple rows, between aisle, etc...) |
 | **Online Payment Integration** | VNPay & Momo payment gateways with IPN webhook verification, configurable timeouts and retry logic |
-| **Dynamic Pricing** | Flexible pricing policies per screen, day-of-week, and showtime — managed from the admin panel |
-| **Performance & Caching** | Redis for seat-lock state mechanism and response caching |
-| **Recovery jobs** | Background jobs for detecting and recovering from invalid entity states (e.g., showtime not published, payment not completed, ticket not unlocked after timeout) when the system restarts |
+| **Dynamic Ticket Pricing** | Flexible pricing policies per screen, day-of-week, and showtime — managed from the admin panel |
+| **Customer Loyalty** | Loyalty program for customers to earn points and redeem rewards |
+| **Coupons** | Discount coupons for customers to use during booking |
+| **Promotion Programs** | Special event offers and discounts for customers |
+| **Admin Panel** | Full MVC admin panel for managing Cinemas, Screens, Movies, Showtimes, Pricing, Promotions, Coupon, Access control and Dashboard |
 | **Showtime Scheduling** | Smart showtime management with automated conflict detection, incorporating movie duration, trailer time (5m), and mandatory cleanup buffers (15m) |
-| **Admin Panel** | Full MVC admin panel for managing Cinemas, Screens, Movies, Showtimes, Pricing, Access control and Dashboard |
+| **Authentication & Authorization** | ASP.NET Core Identity with JWT + HttpOnly refresh-token cookies, role-based access control, Google & Facebook OAuth |
+| **Recovery jobs** | Background jobs for detecting and recovering from invalid entity states (e.g., showtime not published, payment not completed, ticket not unlocked after timeout) when the system restarts |
 
 ---
 
@@ -284,37 +287,109 @@ Key configuration sections in `appsettings.json`:
 ---
 ## Screenshots
 
-### Home page
+### Booking Main Flow
+![Booking with Momo Payment](assets/booking-main-flow.gif)
+
+### Frontend React SPA
+**Home page**
 ![Home page](assets/frontend/home-page.png)
-### Showtime schedules page
+**Showtime schedules page**
 ![Showtime schedules page](assets/frontend/showtimes.png)
-### Seat Selection page
+**Seat Selection page**
 ![Seat Selection page](assets/frontend/seat-selection.png)
-### Checkout page
+**Checkout page**
 ![Checkout page](assets/frontend/checkout.png)
-### Payment result
+**Payment result**
 ![Payment result](assets/frontend/payment-result.png)
-### Movie list page
+**Movie list page**
 ![Movie List page](assets/frontend/movie-list.png)
 
 
-### Admin Dashboard
+### Admin Portal (ASP.NET Core MVC)
+
+**Admin Dashboard**
 ![Admin Dashboard](assets/admin/dashboard.png)
-### Admin Manage Showtimes
-![Admin Manage Showtime](assets/admin/showtime-schedules.png)
-### Admin Design Screen
-![Admin Design Seat](assets/admin/create-screen.png)
-### Admin Manage Permissions
-![Admin Design Seat](assets/admin/access-control.png)
 
-### Grafana Dashboard
-![Grafana Dashboard](assets/monitoring/grafana-dashboard.png)
+### Movie Management
 
-### Loki Logs
-![Loki Logs](assets/monitoring/loki-logging.png)
+| | |
+|---|---|
+| Movie List | Create / Edit Modal |
+| ![Movie List](assets/admin/movie-management.png) | ![Create / Edit Movie](assets/admin/movie-management.png) |
 
-### Tempo Traces
-![Tempo Traces](assets/monitoring/tempo-tracing.png)
+### Cinema & Screen Management
+| | |
+|---|---|
+| Cinema List | Create Cinema Modal |
+| ![Cinema List](assets/admin/cinema-management.png) | ![Create Cinema](assets/admin/cinema-create-modal.png) |
+| **Screen List** | **Design Seat Layout** |
+| ![Screen List](assets/admin/screen-management.png) | ![Design Seat Layout](assets/admin/create-screen.png) |
+
+### Pricing Policy Management
+
+| | |
+|---|---|
+| Pricing Policy List | Create Modal |
+| ![Pricing Policy List](assets/admin/ticket-pricing.png) | ![Create Pricing Policy](assets/admin/ticket-pricing-create-modal.png) |
+
+### Loyalty Tier Management
+
+| | |
+|---|---|
+| Loyalty Tier List | Update Modal |
+| ![Loyalty Tier List](assets/admin/loyalty-tier-management.png) | ![Update Loyalty Tier](assets/admin/loyalty-tier-update-modal.png) |
+
+### Coupon Management
+
+| | |
+|---|---|
+| Coupon List | Create / Edit Modal |
+| ![Coupon List](assets/admin/coupon-management.png) | ![Create / Edit Coupon](assets/admin/coupon-management.png) |
+
+### Promotion Program Management
+
+| | |
+|---|---|
+| Promotion List | Create Modal |
+| ![Promotion List](assets/admin/promotion-management.png) | ![Create Promotion](assets/admin/promotion-create-modal.png) |
+
+### Customer & System User Account Management
+
+| | |
+|---|---|
+| Customer Account List | System User Permissions |
+| ![Customer Account List](assets/admin/customer-account-management.png) | ![System User Permissions](assets/admin/system-user-account-edit-permission-modal.png) |
+
+**Access Control / Permissions Matrix**
+![Permissions Matrix](assets/admin/access-control.png)
+
+### Showtime Scheduling
+
+| | |
+|---|---|
+| Showtime Calendar | Create Showtime Modal |
+| ![Showtime Calendar](assets/admin/showtime-schedules.png) | ![Create Showtime](assets/admin/showtime-create-modal.png) |
+
+### Seat Selection Rules Management
+
+| | |
+|---|---|
+| Seat Selection Rules | Update Rule Modal |
+| ![Seat Selection Rules](assets/admin/seat-selection-rules.png) | ![Update Rule](assets/admin/seat-selection-update-modal.png) |
+
+### Concession Management
+
+| | |
+|---|---|
+| Concession Management | Create Modal |
+| ![Concession Management](assets/admin/concession-management.png) | ![Create Concession](assets/admin/concession-create-modal.png) |
+
+### Observability & Monitoring
+
+| | | |
+|---|---|---|
+| Grafana Dashboard| Loki Logs | Tempo Traces |
+| ![Grafana Dashboard](assets/monitoring/grafana-dashboard.png) | ![Loki Logs](assets/monitoring/loki-logging.png) | ![Tempo Traces](assets/monitoring/tempo-tracing.png) |
 
 ---
 

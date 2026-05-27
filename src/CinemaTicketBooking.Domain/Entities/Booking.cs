@@ -264,11 +264,18 @@ public class Booking : AggregateRoot
     public decimal TotalPromotionDiscount => AppliedPromotions.Sum(p => p.DiscountAmount);
 
     /// <summary>
-    /// Applies a promotion to the booking.
+    /// Applies a promotion to the booking and raises PromotionApplied domain event.
     /// </summary>
     public void ApplyPromotion(BookingPromotion promotion)
     {
         AppliedPromotions.Add(promotion);
+        RaiseEvent(new Events.PromotionApplied(
+            PromotionProgramId: promotion.PromotionProgramId,
+            BookingId: Id,
+            CustomerId: CustomerId,
+            PromotionName: promotion.PromotionName,
+            DiscountAmount: promotion.DiscountAmount,
+            DiscountType: promotion.DiscountType));
     }
 
     // =============================================================
@@ -334,6 +341,21 @@ public class Booking : AggregateRoot
     public void UpdateFinalAmount(decimal discountAmount)
     {
         UpdateFinalAmount(discountAmount, CouponDiscountAmount);
+    }
+
+    /// <summary>
+    /// Sets the final amount directly. Preferred when the total discount
+    /// has been computed externally (e.g. by DiscountStrategyComposite).
+    /// Validates that the amount is non-negative and does not exceed OriginAmount.
+    /// </summary>
+    public void SetFinalAmount(decimal amount)
+    {
+        if (amount < 0)
+            throw new ArgumentException("Final amount cannot be negative.", nameof(amount));
+        if (amount > OriginAmount)
+            throw new ArgumentException("Final amount cannot exceed origin amount.", nameof(amount));
+
+        FinalAmount = amount;
     }
 }
 

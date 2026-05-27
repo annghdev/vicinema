@@ -74,6 +74,7 @@ public static class DependencyInjection
         services.AddScoped<IDiscountStrategy, CouponDiscountStrategy>();
         services.AddScoped<IDiscountStrategy, PromotionDiscountStrategy>();
         services.AddScoped<IPromotionScanService, PromotionScanService>();
+        services.AddScoped<IBookingPricingService, BookingPricingService>();
         services.AddScoped<IQueryService, QueryService>();
         services.AddScoped<IUnitOfWork, EFUnitOfWork>();
         services.AddScoped<DataSeeder>();

@@ -1,4 +1,6 @@
 using CinemaTicketBooking.Domain;
+using CinemaTicketBooking.Domain.Enums;
+using CinemaTicketBooking.Domain.Events;
 using CinemaTicketBooking.UnitTests.Shared;
 using FluentAssertions;
 
@@ -302,6 +304,32 @@ public class BookingTests
         var booking = DomainTestBuilders.PendingBooking(Guid.CreateVersion7(), DomainTestBuilders.GuestCustomer());
         var act = () => booking.UpdateFinalAmount(0m, -1m);
         act.Should().Throw<ArgumentException>().WithParameterName("couponDiscount");
+    }
+
+    [Fact]
+    public void ApplyPromotion_Should_Raise_PromotionAppliedEvent()
+    {
+        var booking = DomainTestBuilders.PendingBooking(Guid.CreateVersion7(), DomainTestBuilders.GuestCustomer());
+        var customerId = Guid.CreateVersion7();
+        booking.CustomerId = customerId;
+
+        var promotion = BookingPromotion.Create(
+            bookingId: booking.Id,
+            promotionProgramId: Guid.CreateVersion7(),
+            name: "Summer Sale",
+            discountAmount: 15_000m,
+            discountType: PromotionDiscountType.OrderTotal);
+
+        booking.ApplyPromotion(promotion);
+
+        booking.Events.Should().ContainSingle(e => e is PromotionApplied);
+        var ev = (PromotionApplied)booking.Events.First(e => e is PromotionApplied);
+        ev.PromotionProgramId.Should().Be(promotion.PromotionProgramId);
+        ev.BookingId.Should().Be(booking.Id);
+        ev.CustomerId.Should().Be(customerId);
+        ev.PromotionName.Should().Be("Summer Sale");
+        ev.DiscountAmount.Should().Be(15_000m);
+        ev.DiscountType.Should().Be(PromotionDiscountType.OrderTotal);
     }
 
     [Fact]
