@@ -9,7 +9,10 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
+using Serilog.Core;
+using Serilog.Events;
 using Serilog.Sinks.Grafana.Loki;
+using System.Diagnostics;
 using System.Reflection;
 
 namespace Microsoft.Extensions.Hosting;
@@ -60,6 +63,7 @@ public static class Extensions
                 .ReadFrom.Configuration(builder.Configuration)
                 .ReadFrom.Services(services)
                 .Enrich.FromLogContext()
+                .Enrich.With<OpenTelemetryContextEnricher>()
                 .Enrich.WithProperty("service_name", builder.Environment.ApplicationName)
                 .Enrich.WithProperty("deployment_environment", builder.Environment.EnvironmentName)
                 .WriteTo.Console(restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information);
@@ -231,5 +235,26 @@ public static class Extensions
         }
 
         return app;
+    }
+}
+
+/// <summary>
+/// Enriches Serilog log events with active OpenTelemetry TraceId and SpanId properties.
+/// </summary>
+public class OpenTelemetryContextEnricher : ILogEventEnricher
+{
+    /// <summary>
+    /// Enriches the log event with active Activity TraceId and SpanId.
+    /// </summary>
+    /// <param name="logEvent">The log event to enrich.</param>
+    /// <param name="propertyFactory">The factory to create properties.</param>
+    public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+    {
+        var activity = Activity.Current;
+        if (activity != null)
+        {
+            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("TraceId", activity.TraceId.ToHexString()));
+            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("SpanId", activity.SpanId.ToHexString()));
+        }
     }
 }
