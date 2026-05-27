@@ -287,6 +287,9 @@ Key configuration sections in `appsettings.json`:
 ---
 ## Screenshots
 
+### Booking Main Flow
+![Booking with Momo Payment](assets/booking-main-flow.gif)
+
 ### Frontend React SPA
 **Home page**
 ![Home page](assets/frontend/home-page.png)
