@@ -107,7 +107,19 @@ public sealed class IdentityAuthService(
         };
         existing.ReplacedByTokenId = newEntity.Id;
         db.RefreshTokens.Add(newEntity);
-        await db.SaveChangesAsync(cancellationToken);
+
+        // 2. Persist rotation — handle concurrent refresh race.
+        // When multiple requests refresh the same token simultaneously, the loser
+        // hits a DbUpdateConcurrencyException because PostgreSQL xmin changed.
+        // Return null (→ 401) instead of letting it bubble up as 409 Conflict.
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return null;
+        }
 
         var accessToken = await CreateAccessTokenAsync(user, cancellationToken);
         var expiresAt = DateTimeOffset.UtcNow.AddMinutes(_jwt.AccessTokenMinutes);

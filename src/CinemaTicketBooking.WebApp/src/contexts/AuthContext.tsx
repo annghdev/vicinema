@@ -1,11 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from "react"
 import { getCurrentAuthProfile } from "../apis/authApi"
+import { performTokenRefresh } from "../apis/httpClient"
 import { type AuthTokenResponse } from "../types/Auth"
 import {
   AUTH_STATE_CHANGED_EVENT,
   clearAuthState,
+  hasRefreshCookieHint,
   persistAuthState,
   readAuthState,
+  readCachedProfile,
   type PersistAuthProfileInput,
   type StoredAuthState,
 } from "../lib/authSession"
@@ -13,6 +16,7 @@ import {
 type AuthContextValue = {
   authState: StoredAuthState | null
   isAuthenticated: boolean
+  isHydrating: boolean
   isResolvingProfile: boolean
   displayName: string | null
   email: string | null
@@ -27,9 +31,34 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: PropsWithChildren) {
+  // In-memory session is empty on mount after reload — start as null
   const [authState, setAuthState] = useState<StoredAuthState | null>(() => readAuthState())
+  const [isHydrating, setIsHydrating] = useState(false)
   const [isResolvingProfile, setIsResolvingProfile] = useState(false)
   const profileSyncTokenRef = useRef<string | null>(null)
+  const hydrationAttemptedRef = useRef(false)
+
+  // =============================================
+  // Hydration: on mount, use HttpOnly cookie to restore in-memory session
+  // =============================================
+
+  useEffect(() => {
+    // Only hydrate once, and only if we have a login hint but no in-memory session
+    if (hydrationAttemptedRef.current) return
+    if (readAuthState()) return // already have in-memory session (e.g. SPA navigation)
+    if (!hasRefreshCookieHint()) return // user was never logged in
+
+    hydrationAttemptedRef.current = true
+    setIsHydrating(true)
+
+    void performTokenRefresh().then((newToken) => {
+      if (newToken) {
+        // performTokenRefresh already called persistAuthState → in-memory is populated
+        setAuthState(readAuthState())
+      }
+      setIsHydrating(false)
+    })
+  }, [])
 
   const refreshProfile = useCallback(async () => {
     const current = readAuthState()
@@ -76,19 +105,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   }, [])
 
+  // =============================================
+  // Sync auth state across in-memory changes (same tab)
+  // =============================================
+
   useEffect(() => {
     const syncAuthState = () => setAuthState(readAuthState())
 
-    const onStorage = (event: StorageEvent) => {
-      if (!event.key || event.key.startsWith("ctb.auth.")) {
-        syncAuthState()
-      }
-    }
-
-    window.addEventListener("storage", onStorage)
     window.addEventListener(AUTH_STATE_CHANGED_EVENT, syncAuthState)
     return () => {
-      window.removeEventListener("storage", onStorage)
       window.removeEventListener(AUTH_STATE_CHANGED_EVENT, syncAuthState)
     }
   }, [])
@@ -127,21 +152,25 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setAuthState(null)
   }, [])
 
+  // Use cached profile for optimistic display during hydration
+  const cachedProfile = isHydrating ? readCachedProfile() : null
+
   const value = useMemo<AuthContextValue>(
     () => ({
       authState,
-      isAuthenticated: Boolean(authState),
+      isAuthenticated: Boolean(authState) || isHydrating,
+      isHydrating,
       isResolvingProfile,
-      displayName: authState?.profile.displayName ?? null,
-      email: authState?.profile.email ?? null,
-      avatarUrl: authState?.profile.avatarUrl ?? null,
-      phoneNumber: authState?.profile.phoneNumber ?? null,
+      displayName: authState?.profile.displayName ?? cachedProfile?.displayName ?? null,
+      email: authState?.profile.email ?? cachedProfile?.email ?? null,
+      avatarUrl: authState?.profile.avatarUrl ?? cachedProfile?.avatarUrl ?? null,
+      phoneNumber: authState?.profile.phoneNumber ?? cachedProfile?.phoneNumber ?? null,
       customerId: authState?.session.customerId ?? null,
       setAuthFromTokens,
       refreshProfile,
       clearAuth,
     }),
-    [authState, clearAuth, isResolvingProfile, refreshProfile, setAuthFromTokens],
+    [authState, cachedProfile, clearAuth, isHydrating, isResolvingProfile, refreshProfile, setAuthFromTokens],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
