@@ -25,7 +25,19 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddScoped<ICorrelationIdAccessor, CorrelationIdAccessor>();
 builder.Services.AddControllersWithViews();
-builder.Services.AddSignalR();
+
+var redisConnectionString = builder.Configuration.GetConnectionString("redis");
+if (!string.IsNullOrWhiteSpace(redisConnectionString))
+{
+    builder.Services.AddSignalR().AddStackExchangeRedis(options =>
+    {
+        options.Configuration = StackExchange.Redis.ConfigurationOptions.Parse(redisConnectionString);
+    });
+}
+else
+{
+    builder.Services.AddSignalR();
+}
 
 builder.Services.AddOpenApi();
 
