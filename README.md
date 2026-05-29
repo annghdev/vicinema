@@ -8,6 +8,10 @@
 
 > A full-stack, real-time cinema ticket booking platform built with **.NET 10** and **React 19** — designed to demonstrate production-grade Clean Architecture, domain-driven design, and modern DevOps practices.
 
+### Read in other languages
+- [Vietnamese/Tiếng Việt](./README.vi.md)
+
+
 ## 📖 Table of Contents
 
 - [📌 Overview](#overview)
@@ -17,7 +21,7 @@
 - [📂 Project Structure](#project-structure)
 - [⚙️ Getting Started](#getting-started)
 - [📸 Live Demo](#live-demo)
-- [🖼 Screenshots](#screenshots)
+- [🖼 Highlight Screenshots](#highlight-screenshots)
 - [📬 Contact](#contact)
 - [📄 License](#license)
 
@@ -32,26 +36,27 @@ Cinema Ticket Booking is an end-to-end web application that allows customers to 
 - Showcase enterprise-level architecture patterns: Clean Architecture, CQRS, Domain Events, and Unit of Work.
 - Provide a fully containerized development and production environment with observability built in.
 
-**Target audience:** Recruiters, hiring managers, and developers interested in a well-structured .NET portfolio project.
+### Summary report
+For a detailed analysis of the project structure, including Domain Aggregates, CQRS commands/queries, event handlers, and full API endpoint metrics, refer to the [Cinema Ticket Booking Project Summary Report](documents/reports/summary-report-28-06-26.md).
 
 ---
 
 ## Key Features
 
-| Category | Highlights |
+| Feature | Description |
 |---|---|
 | **Real-time Seat Status Update** | SignalR hubs broadcast ticket lock/unlock events instantly — multiple users see the same seat map live |
 | **Seat Locking** | Redis-based seat locking with fallbacks to Postgres advisory locks and optimistic concurrency via xmin. |
-| **Seat Selection Rules** | Flexible rules to prevent invalid seat selection (gaps between seats, orphaned seats, multiple rows, between aisle, etc...) |
-| **Online Payment Integration** | VNPay & Momo payment gateways with IPN webhook verification, configurable timeouts and retry logic |
-| **Dynamic Ticket Pricing** | Flexible pricing policies per screen, day-of-week, and showtime — managed from the admin panel |
-| **Customer Loyalty** | Loyalty program for customers to earn points and redeem rewards |
-| **Coupons** | Discount coupons for customers to use during booking |
-| **Promotion Programs** | Special event offers and discounts for customers |
-| **Admin Panel** | Full MVC admin panel for managing Cinemas, Screens, Movies, Showtimes, Pricing, Promotions, Coupon, Access control and Dashboard |
-| **Showtime Scheduling** | Smart showtime management with automated conflict detection, incorporating movie duration, trailer time (5m), and mandatory cleanup buffers (15m) |
-| **Authentication & Authorization** | ASP.NET Core Identity with JWT + HttpOnly refresh-token cookies, role-based access control, Google & Facebook OAuth |
-| **Recovery jobs** | Background jobs for detecting and recovering from invalid entity states (e.g., showtime not published, payment not completed, ticket not unlocked after timeout) when the system restarts |
+| **Seat Selection Rules** | Flexible rules to prevent invalid seat selection (gaps between seats, orphaned seats, multiple rows, between aisle, etc...). Administrators can flexibly configure the enforcement level: Block/Warn/Allow for each rule |
+| **Online Payment Integration** | VNPay & Momo payment gateways with IPN webhook verification, configurable timeouts, and allows users to retry with a different payment method if an error occurs |
+| **Dynamic Ticket Pricing** | Flexible pricing policies per screen, day-of-week, and showtime — managed easily from the admin portal. |
+| **Customer Loyalty** | Loyalty program for customers to earn points, upgrade membership tiers (Silver, Gold, Platinum...), enjoy discounts, and receive coupons |
+| **Coupons** | Allows customers to apply discount coupons directly during booking |
+| **Promotion Programs** | Automatically scans and applies eligible promotion programs during booking. Supports flexible management of application scope, value limits, and discount types |
+| **Showtime Scheduling** | Smart showtime management with automated conflict detection, incorporating movie duration, trailer time, cleanup buffers, and automatic showtime status transitions on time |
+| **Authentication & Authorization** | ASP.NET Core Identity with JWT + HttpOnly refresh-token cookies, role-based access control, and social login support (Google & Facebook OAuth) |
+| **Admin Portal** | Rich admin interface for managing Cinemas, Screens, Movies, Showtimes, Pricing, Promotions, Coupons, detailed role permissions, and an intuitive revenue dashboard |
+| **Recovery jobs** | Background tasks periodically scanning and releasing expired locked seats (exceeding 10 minutes), and automating daily showtime schedules |
 
 ---
 
@@ -97,7 +102,7 @@ Cinema Ticket Booking is an end-to-end web application that allows customers to 
 | **Prometheus** | 2.55+ | Metrics collection (app + PostgreSQL + Redis + cAdvisor) |
 | **Grafana** | 11.6+ | Dashboards & alerting |
 | **Loki** | 3.2+ | Log aggregation |
-| **Tempo** | 2.6+ | Distributed tracing (OpenTelemetry) |
+| **Tempo** | 2.6+ | Request tracing (OpenTelemetry) |
 
 ---
 
@@ -105,7 +110,7 @@ Cinema Ticket Booking is an end-to-end web application that allows customers to 
 
 ### Design Principles
 
-- **Clean Architecture** — strict dependency inversion: Domain → Application → Infrastructure → WebServer
+- **Clean Architecture** — strict dependency inversion: Domain → Application → Infrastructure → Presentation (WebServer)
 - **Domain-Driven Design (DDD)** — rich domain entities with encapsulated business rules, domain events, and value objects
 - **CQRS** — commands and queries separated via Wolverine message bus
 - **Repository + Unit of Work** — data access abstraction with transactional consistency
@@ -142,7 +147,7 @@ Cinema Ticket Booking is an end-to-end web application that allows customers to 
 │   ├── Abstractions/                      # Service interfaces, UoW, markers
 │   ├── Common/                            # Shared DTOs, pagination, result types
 │   ├── Features/                          # CQRS commands & queries per aggregate
-│   └── Messaging/                         # Domain event handlers (side effects)
+│   └── EventHandling/                     # Domain event handlers (side effects)
 │
 ├── CinemaTicketBooking.Infrastructure/    # External concerns implementation
 │   ├── Auth/                              # Identity, JWT, OAuth, role seeding
@@ -195,7 +200,7 @@ cd cinema-ticket-booking-app-dotnet10
 
 # 2. Copy and configure environment variables
 cp .env.example .env
-# Edit .env if you need to change ports or credentials
+# Edit .env with your required API keys and Secret keys (these cannot be shared here, you need to register and edit them yourself to avoid deployment errors)
 
 # 3. Start all services (automatically build local changes)
 docker compose up -d --build
@@ -207,7 +212,7 @@ docker compose up -d --build
 #    - Grafana:            http://localhost:3000
 ```
 
-### Option 2: Aspire Orchestrator
+### Option 2: Aspire Orchestrator (best for local development)
 **Prerequisites**
 
 | Tool | Version |
@@ -285,121 +290,47 @@ Key configuration sections in `appsettings.json`:
 | Backend API Docs | **http://cinemaserver.annghdev.online/scalar/v1** |
 
 ---
-## Screenshots
+## Highlight Screenshots
 
 ### Booking Main Flow
 ![Booking with Momo Payment](assets/booking-main-flow.gif)
 
-### Frontend React SPA
-**Home page**
-![Home page](assets/frontend/home-page.png)
-**Showtime schedules page**
-![Showtime schedules page](assets/frontend/showtimes.png)
-**Seat Selection page**
-![Seat Selection page](assets/frontend/seat-selection.png)
-**Checkout page**
-![Checkout page](assets/frontend/checkout.png)
-**Payment result**
-![Payment result](assets/frontend/payment-result.png)
-**Movie list page**
-![Movie List page](assets/frontend/movie-list.png)
-
+### Seat Status Real-time Update
+![Seat Status Real-time Update](assets/seat-status-realtime.gif)
 
 ### Admin Portal (ASP.NET Core MVC)
 
 **Admin Dashboard**
-![Admin Dashboard](assets/admin/dashboard.png)
+![Admin Dashboard](assets/admin-dashboard.gif)
 
-### Movie Management
+**Showtime Scheduling**
+![Showtime Scheduling](assets/showtime-scheduling.gif)
 
-| | |
-|---|---|
-| Movie List | Create / Edit Modal |
-| ![Movie List](assets/admin/movie-management.png) | ![Create / Edit Movie](assets/admin/movie-management.png) |
+**Coupon Management**
+![Coupon Management](assets/coupon-management.gif)
 
-### Cinema & Screen Management
-| | |
-|---|---|
-| Cinema List | Create Cinema Modal |
-| ![Cinema List](assets/admin/cinema-management.png) | ![Create Cinema](assets/admin/cinema-create-modal.png) |
-| **Screen List** | **Design Seat Layout** |
-| ![Screen List](assets/admin/screen-management.png) | ![Design Seat Layout](assets/admin/create-screen.png) |
-
-### Pricing Policy Management
-
-| | |
-|---|---|
-| Pricing Policy List | Create Modal |
-| ![Pricing Policy List](assets/admin/ticket-pricing.png) | ![Create Pricing Policy](assets/admin/ticket-pricing-create-modal.png) |
-
-### Loyalty Tier Management
-
-| | |
-|---|---|
-| Loyalty Tier List | Update Modal |
-| ![Loyalty Tier List](assets/admin/loyalty-tier-management.png) | ![Update Loyalty Tier](assets/admin/loyalty-tier-update-modal.png) |
-
-### Coupon Management
-
-| | |
-|---|---|
-| Coupon List | Create / Edit Modal |
-| ![Coupon List](assets/admin/coupon-management.png) | ![Create / Edit Coupon](assets/admin/coupon-management.png) |
-
-### Promotion Program Management
-
-| | |
-|---|---|
-| Promotion List | Create Modal |
-| ![Promotion List](assets/admin/promotion-management.png) | ![Create Promotion](assets/admin/promotion-create-modal.png) |
-
-### Customer & System User Account Management
-
-| | |
-|---|---|
-| Customer Account List | System User Permissions |
-| ![Customer Account List](assets/admin/customer-account-management.png) | ![System User Permissions](assets/admin/system-user-account-edit-permission-modal.png) |
+**Seat Selection Rules Configuration**
+![Seat Selection Rules Configuration](assets/seat-selection-rules-config.gif)
 
 **Access Control / Permissions Matrix**
 ![Permissions Matrix](assets/admin/access-control.png)
 
-### Showtime Scheduling
-
-| | |
-|---|---|
-| Showtime Calendar | Create Showtime Modal |
-| ![Showtime Calendar](assets/admin/showtime-schedules.png) | ![Create Showtime](assets/admin/showtime-create-modal.png) |
-
-### Seat Selection Rules Management
-
-| | |
-|---|---|
-| Seat Selection Rules | Update Rule Modal |
-| ![Seat Selection Rules](assets/admin/seat-selection-rules.png) | ![Update Rule](assets/admin/seat-selection-update-modal.png) |
-
-### Concession Management
-
-| | |
-|---|---|
-| Concession Management | Create Modal |
-| ![Concession Management](assets/admin/concession-management.png) | ![Create Concession](assets/admin/concession-create-modal.png) |
-
 ### Observability & Monitoring
+![Observability & Monitoring](assets/monitoring.gif)
 
-| | | |
-|---|---|---|
-| Grafana Dashboard| Loki Logs | Tempo Traces |
-| ![Grafana Dashboard](assets/monitoring/grafana-dashboard.png) | ![Loki Logs](assets/monitoring/loki-logging.png) | ![Tempo Traces](assets/monitoring/tempo-tracing.png) |
+### Aspire Dashboard (Support tool for local development environment)
+![Aspire Dashboard](assets/aspire-dashboard.gif)
+
+### Interactive API Docs - Test APIs directly in the browser (Scalar)
+![API Docs (Scalar)](assets/scalar-api-docs.gif)
 
 ---
 
 ## Contact
 
-| | |
-|---|---|
-| **Name** | `Nguyễn Hữu An` |
-| **Email** | `annghdev@gmail.com` |
-| **Zalo** | `0933 912 012` |
+- **Name:**  `Nguyễn Hữu An`
+- **Email:**  `annghdev@gmail.com`
+- **Phone/Zalo:** `0867 662 945`
 
 ---
 
