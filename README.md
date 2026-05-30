@@ -1,4 +1,4 @@
-# 🎬 Cinema Ticket Booking
+# 🎬 Vicinema - Mobie Ticket Booking System
   
 ![.NET](https://img.shields.io/badge/.NET-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=blue)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
