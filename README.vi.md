@@ -160,9 +160,9 @@ Cinema Ticket Booking là một ứng dụng web toàn diện (End-to-End) cho p
 ├── CinemaTicketBooking.WebServer/         # Dự án khởi chạy ứng dụng ASP.NET Core
 │   ├── ApiEndpoints/                      # Định nghĩa các Minimal API Endpoints
 │   ├── Controllers/                       # Các MVC Controller cho giao diện Admin
-│   ├── CronJobs/                          # Các dịch vụ chạy ngầm tuần hoàn (Hosted Services)
+│   ├── CronJobs/                          # Các dịch vụ chạy ngầm định kỳ
 │   ├── Hubs/                              # Các SignalR Hubs thời gian thực
-│   ├── Middlewares/                       # Middlewares bắt lỗi toàn cục, CorrelationId
+│   ├── Middlewares/                       # Http Middlewares
 │   ├── Models/                            # Cấu trúc ViewModel phục vụ MVC
 │   └── Views/                             # Các Razor Views cho giao diện quản trị Admin
 │
@@ -195,8 +195,8 @@ Khởi chạy toàn bộ hệ thống (backend, frontend, database, cache, monit
 
 ```bash
 # 1. Sao chép mã nguồn (Clone repository)
-git clone https://github.com/annghdev/cinema-ticket-booking-app-dotnet10.git
-cd cinema-ticket-booking-app-dotnet10
+git clone https://github.com/annghdev/vicinema.git
+cd vicinema
 
 # 2. Sao chép và cấu hình biến môi trường
 cp .env.example .env
@@ -225,8 +225,8 @@ docker compose up -d --build
 
 ```bash
 # 1. Sao chép mã nguồn (Clone repository)
-git clone https://github.com/annghdev/cinema-ticket-booking-app-dotnet10.git
-cd cinema-ticket-booking-app-dotnet10
+git clone https://github.com/annghdev/vicinema.git
+cd vicinema
 
 # 2. Đảm bảo cấu hình thông tin kết nối trong file appsettings.json
 
@@ -285,9 +285,9 @@ Các mục cấu hình chính trong file `appsettings.json`:
 
 | | |
 |---|---|
-| Giao diện Client (React) | **https://annghdev.online** |
-| Trang Quản Trị (MVC) | **http://cinemaserver.annghdev.online** |
-| Tài liệu API Backend | **http://cinemaserver.annghdev.online/scalar/v1** |
+| Giao diện Client (React) |  **https://vici.annghdev.online** |
+| Trang Quản Trị (MVC) | **http://vici-portal.annghdev.online** |
+| Tài liệu API Backend | **http://vici-portal.annghdev.online/scalar/v1**  |
 
 ---
 ## Hình Ảnh Nổi Bật

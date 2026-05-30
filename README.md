@@ -162,7 +162,7 @@ For a detailed analysis of the project structure, including Domain Aggregates, C
 │   ├── Controllers/                       # MVC admin controllers
 │   ├── CronJobs/                          # Background hosted services
 │   ├── Hubs/                              # Real-time SignalR hubs
-│   ├── Middlewares/                       # Global exception handling
+│   ├── Middlewares/                       # Http middlewares
 │   ├── Models/                            # View models for MVC
 │   └── Views/                             # Razor views for admin panel
 │
@@ -285,9 +285,9 @@ Key configuration sections in `appsettings.json`:
 
 | | |
 |---|---|
-| Frontend React SPA | **https://annghdev.online** |
-| Admin Panel (MVC) | **http://cinemaserver.annghdev.online** |
-| Backend API Docs | **http://cinemaserver.annghdev.online/scalar/v1** |
+| Frontend React SPA | **https://vici.annghdev.online** |
+| Admin Panel (MVC) | **http://vici-portal.annghdev.online** |
+| Backend API Docs | **http://vici-portal.annghdev.online/scalar/v1** |
 
 ---
 ## Highlight Screenshots
