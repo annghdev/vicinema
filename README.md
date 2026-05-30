@@ -1,4 +1,4 @@
-# 🎬 Vicinema - Mobie Ticket Booking System
+# 🎬 Vicinema - Movie Ticket Booking System
   
 ![.NET](https://img.shields.io/badge/.NET-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=blue)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
@@ -6,7 +6,7 @@
 ![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis)
 ![Docker](https://img.shields.io/badge/Docker-28-2496ED?style=for-the-badge&logo=docker)
 
-> A full-stack, real-time cinema ticket booking platform built with **.NET 10** and **React 19** — designed to demonstrate production-grade Clean Architecture, domain-driven design, and modern DevOps practices.
+> A full-stack, real-time movie ticket booking platform built with **.NET 10** and **React 19** — designed to demonstrate production-grade Clean Architecture, domain-driven design, and modern DevOps practices.
 
 ### Read in other languages
 - [Vietnamese/Tiếng Việt](./README.vi.md)
@@ -99,7 +99,7 @@ For a detailed analysis of the project structure, including Domain Aggregates, C
 | **.NET Aspire** | 13.2+ | Service orchestration, service discovery, OpenTelemetry |
 | **GitHub Actions** | - | CI/CD — test → build → push Docker images → deploy |
 | **Coolify** | 4.0.0 | Self-hosted PaaS for deployment on AWS EC2 |
-| **Prometheus** | 2.55+ | Metrics collection (app + PostgreSQL + Redis + cAdvisor) |
+| **Prometheus** | 2.55+ | Metrics collection (app + PostgreSQL + Redis) |
 | **Grafana** | 11.6+ | Dashboards & alerting |
 | **Loki** | 3.2+ | Log aggregation |
 | **Tempo** | 2.6+ | Request tracing (OpenTelemetry) |
@@ -195,8 +195,8 @@ Spin up the entire stack (backend, frontend, database, cache, monitoring) with a
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/annghdev/cinema-ticket-booking-app-dotnet10.git
-cd cinema-ticket-booking-app-dotnet10
+git clone https://github.com/annghdev/vicinema.git
+cd vicinema
 
 # 2. Copy and configure environment variables
 cp .env.example .env
@@ -225,8 +225,8 @@ docker compose up -d --build
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/annghdev/cinema-ticket-booking-app-dotnet10.git
-cd cinema-ticket-booking-app-dotnet10
+git clone https://github.com/annghdev/vicinema.git
+cd vicinema
 
 # 2. Ensure your credentials are configured in appsettings.json
 

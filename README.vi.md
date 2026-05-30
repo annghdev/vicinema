@@ -1,4 +1,4 @@
-# 🎬 Cinema Ticket Booking
+# 🎬 Vicinema - Movie Ticket Booking
   
 ![.NET](https://img.shields.io/badge/.NET-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=blue)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
@@ -99,7 +99,7 @@ Cinema Ticket Booking là một ứng dụng web toàn diện (End-to-End) cho p
 | **.NET Aspire** | 13.2+ | Điều phối tài nguyên, khám phá dịch vụ, cấu hình OpenTelemetry |
 | **GitHub Actions** | - | Tự động hóa CI/CD — kiểm thử → build → push Docker images → deploy |
 | **Coolify** | 4.0.0 | PaaS tự lưu trữ giúp triển khai ứng dụng tự động trên AWS EC2 |
-| **Prometheus** | 2.55+ | Thu thập số liệu đo lường hệ thống (app, Postgres, Redis, cAdvisor) |
+| **Prometheus** | 2.55+ | Thu thập số liệu đo lường hệ thống (app, Postgres, Redis) |
 | **Grafana** | 11.6+ | Bảng điều khiển trực quan hóa metrics và cấu hình cảnh báo |
 | **Loki** | 3.2+ | Thu thập và quản lý logs tập trung |
 | **Tempo** | 2.6+ | Theo dõi vết Requests (qua OpenTelemetry) |
@@ -220,7 +220,7 @@ docker compose up -d --build
 | [.NET SDK](https://dotnet.microsoft.com/download) | 10.0+ | Bộ phát triển .NET |
 | [Node.js](https://nodejs.org/) | 20+ | Môi trường chạy Javascript |
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Mới nhất | Chạy các container bổ trợ local |
-| [Aspire Workload](https://learn.microsoft.com/en-us/dotnet/aspire/fundamentals/setup) | 13.2 | Điều phối Aspire |
+| [Aspire Workload](https://learn.microsoft.com/en-us/dotnet/aspire/fundamentals/setup) | 13.2 | Điều phối resources |
 
 
 ```bash

@@ -12,6 +12,7 @@
     <File Path=".gitignore" />
     <File Path="docker-compose.yaml" />
     <File Path="README.md" />
+    <File Path="README.vi.md" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/CinemaTicketBooking.Application/CinemaTicketBooking.Application.csproj" />
